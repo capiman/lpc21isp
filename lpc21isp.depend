@@ -1,0 +1,47 @@
+# depslib dependency file v1.0
+1242619188 source:/home/moses/Projects/lpc21isp_182/adprog.c
+	"StdAfx.h"
+	"lpc21isp.h"
+	"adprog.h"
+
+1242011072 /home/moses/Projects/lpc21isp_182/StdAfx.h
+
+1266622824 /home/moses/Projects/lpc21isp_182/lpc21isp.h
+	<windows.h>
+	<io.h>
+	<conio.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<stdlib.h>
+	<string.h>
+	<strings.h>
+	<sys/ioctl.h>
+	<termios.h>
+	<unistd.h>
+	<sys/time.h>
+	<ctype.h>
+	<stdio.h>
+	<stdarg.h>
+	<time.h>
+	<errno.h>
+	<sys/errno.h>
+	<stdlib.h>
+	<string.h>
+	<fcntl.h>
+
+1242011072 /home/moses/Projects/lpc21isp_182/adprog.h
+
+1309060290 source:/home/moses/Projects/lpc21isp_182/lpcprog.c
+	"StdAfx.h"
+	"lpc21isp.h"
+	"lpcprog.h"
+
+1266622824 /home/moses/Projects/lpc21isp_182/lpcprog.h
+
+1246332044 source:/home/moses/Projects/lpc21isp_182/lpcterm.c
+	"StdAfx.h"
+	"lpc21isp.h"
+	"lpcterm.h"
+
+1242011072 /home/moses/Projects/lpc21isp_182/lpcterm.h
+

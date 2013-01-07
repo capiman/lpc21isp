@@ -1,0 +1,26 @@
+all:      lpc21isp.exe
+
+GLOBAL_DEP  = lpc21isp.h adprog.h lpcprog.h lpcterm.h
+RM = del
+CC = cl
+
+# CFLAGS = -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS
+CFLAGS =
+
+adprog.obj: adprog.c $(GLOBAL_DEP)
+    $(CC) -c $(CFLAGS) adprog.c
+
+lpcprog.obj: lpcprog.c $(GLOBAL_DEP)
+    $(CC) -c $(CFLAGS) lpcprog.c
+
+lpcterm.obj: lpcterm.c $(GLOBAL_DEP)
+    $(CC) -c $(CFLAGS) lpcterm.c
+
+lpc21isp.obj: lpc21isp.c $(GLOBAL_DEP)
+    $(CC) -c $(CFLAGS) lpc21isp.c
+
+lpc21isp.exe: lpc21isp.obj adprog.obj lpcprog.obj lpcterm.obj
+    $(CC) /Felpc21isp.exe lpc21isp.obj adprog.obj lpcprog.obj lpcterm.obj
+
+clean:
+    $(RM) adprog.obj lpcprog.obj lpcterm.obj lpc21isp.obj lpc21isp.exe vc*.pdb
