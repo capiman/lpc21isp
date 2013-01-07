@@ -342,13 +342,16 @@ Change-History:
                   Fixed conditional compilation logic in lpc21isp.h to allow compiling for ARM Linux.
 1.86   2012-12-14 diskrepairman
                   added devices: LPC1114/203 LPC1114/303 LPC1114/323 LPC1114/333 LPC1115/303
+1.87   2012-12-18 Philip Munts
+                  Added a section of code to ResetTarget() in lpc21isp.c to allow using Linux GPIO pin
+                  to control reset and ISP.
 
 */
 
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.86"
+#define VERSION_STR "1.87"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex
@@ -1357,6 +1360,87 @@ run mode.
 */
 void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
 {
+#if defined(__linux__) && defined(GPIO_RST) && defined(GPIO_ISP)
+
+// This code section allows using Linux GPIO pins to control the -RST and -ISP
+// signals of the target microcontroller.
+//
+// Build lpc21isp to use Linux GPIO like this:
+//
+// make CFLAGS="-Wall -DGPIO_ISP=23 -DGPIO_RST=18"
+//
+// The GPIO pins must be pre-configured in /etc/rc.local (or other startup script)
+// similar to the following:
+//
+// # Configure -ISP signal
+// echo 23 >/sys/class/gpio/export
+// echo out >/sys/class/gpio/gpio23/direction
+// echo 1 >/sys/class/gpio/gpio23/value
+// chown root.gpio /sys/class/gpio/gpio23/value
+// chmod 660 /sys/class/gpio/gpio23/value
+//
+// # Configure -RST signal
+// echo 18 >/sys/class/gpio/export
+// echo out >/sys/class/gpio/gpio18/direction
+// echo 1 >/sys/class/gpio/gpio18/value
+// chown root.gpio /sys/class/gpio/gpio18/value
+// chmod 660 /sys/class/gpio/gpio18/value
+//
+// Then if the user is a member of the gpio group, lpc21isp will not requre any
+// special permissions to access the GPIO signals.
+
+  char gpio_isp_filename[256];
+  char gpio_rst_filename[256];
+  int gpio_isp;
+  int gpio_rst;
+
+  memset(gpio_isp_filename, 0, sizeof(gpio_isp_filename));
+  sprintf(gpio_isp_filename, "/sys/class/gpio/gpio%d/value", GPIO_ISP);
+
+  memset(gpio_rst_filename, 0, sizeof(gpio_rst_filename));
+  sprintf(gpio_rst_filename, "/sys/class/gpio/gpio%d/value", GPIO_RST);
+
+  gpio_isp = open(gpio_isp_filename, O_WRONLY);
+  if (gpio_isp < 0)
+  {
+    fprintf(stderr, "ERROR: open() for %s failed, %s\n", gpio_isp_filename, strerror(errno));
+    exit(1);
+  }
+
+  gpio_rst = open(gpio_rst_filename, O_WRONLY);
+  if (gpio_rst < 0)
+  {
+    fprintf(stderr, "ERROR: open() for %s failed, %s\n", gpio_rst_filename, strerror(errno));
+    exit(1);
+  }
+
+  switch (mode)
+  {
+    case PROGRAM_MODE :
+      write(gpio_isp, "0\n", 2);	// Assert -ISP
+      Sleep(100);
+      write(gpio_rst, "0\n", 2);	// Assert -RST
+      Sleep(500);
+      write(gpio_rst, "1\n", 2);	// Deassert -RST
+      Sleep(100);
+      write(gpio_isp, "1\n", 2);	// Deassert -ISP
+      Sleep(100);
+      break;;
+
+    case RUN_MODE :
+      write(gpio_rst, "0\n", 2);	// Assert -RST
+      Sleep(500);
+      write(gpio_rst, "1\n", 2);	// Deassert -ISP
+      Sleep(100);
+      break;;
+  }
+
+  close(gpio_isp);
+  close(gpio_rst);
+
+  return;
+#endif
+
     if (IspEnvironment->ControlLines)
     {
         switch (mode)
