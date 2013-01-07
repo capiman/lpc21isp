@@ -338,12 +338,15 @@ Change-History:
                   Abort programming when unknown NXP chip id is detected
 1.84   2012-09-27 Philip Munts
                   Added chip id's for more LPC11xx parts, per UM10398 Rev. 11 26 July 2012
+1.85   2012-12-13 Philip Munts
+                  Fixed conditional compilation logic in lpc21isp.h to allow compiling for ARM Linux.
+
 */
 
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.84"
+#define VERSION_STR "1.85"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex

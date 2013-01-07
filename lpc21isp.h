@@ -38,7 +38,7 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 #elif defined(__CYGWIN__)
 #define COMPILE_FOR_CYGWIN
 #define COMPILED_FOR "Cygwin"
-#elif defined(__arm__) || defined(__thumb__)
+#elif (defined(__arm__) || defined(__thumb__)) && !defined(__linux__)
 #define COMPILE_FOR_LPC21
 #define COMPILED_FOR "ARM"
 #define printf iprintf
