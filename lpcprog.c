@@ -1,15 +1,16 @@
 /******************************************************************************
 
-Project:           Portable command line ISP for Philips LPC2000 family
+Project:           Portable command line ISP for NXP LPC1000 / LPC2000 family
                    and Analog Devices ADUC70xx
 
 Filename:          lpcprog.c
 
-Compiler:          Microsoft VC 6/7, GCC Cygwin, GCC Linux, GCC ARM ELF
+Compiler:          Microsoft VC 6/7, Microsoft VS2008, Microsoft VS2010,
+                   GCC Cygwin, GCC Linux, GCC ARM ELF
 
 Author:            Martin Maurer (Martin.Maurer@clibb.de)
 
-Copyright:         (c) Martin Maurer 2003-2010, All rights reserved
+Copyright:         (c) Martin Maurer 2003-2011, All rights reserved
 Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.com
 
     This file is part of lpc21isp.
@@ -92,7 +93,7 @@ static int unsigned SectorTable_RAM[]  = { 65000 };
 
 static LPC_DEVICE_TYPE LPCtypes[] =
 {
-   { 0, 0, 0 },  /* unknown */
+   { 0, 0, 0, 0, 0, 0, 0, CHIP_VARIANT_NONE },  /* unknown */
 
    // id, name of product, flash size, ram size, total number of sector, max copy size, sector table, chip variant
 
@@ -128,8 +129,10 @@ static LPC_DEVICE_TYPE LPCtypes[] =
    { 0x0367002B, "1227",        128, 32, 32, 4096, SectorTable_17xx, CHIP_VARIANT_LPC11XX },
 
    { 0x2C42502B, "1311",          8,  4,  2, 1024, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
+   { 0x1816902B, "1311/01",       8,  4,  2, 1024, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
    { 0x2C40102B, "1313",         32,  8,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
-   { 0x3D01402B, "1342",          8,  4,  2, 1024, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
+   { 0x1830102B, "1313/01",      32,  8,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
+   { 0x3D01402B, "1342",         16,  4,  4, 1024, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
    { 0x3D00002B, "1343",         32,  8,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
 
    { 0x25001118, "1751",         32,  8,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC17XX },
@@ -204,8 +207,8 @@ static LPC_DEVICE_TYPE LPCtypes[] =
    { 0x1701FF35, "2478",        512, 98, 28, 4096, SectorTable_213x, CHIP_VARIANT_LPC2XXX }
 };
 
-/***************************** PHILIPS Download *********************************/
-/**  Download the file from the internal memory image to the philips microcontroller.
+/***************************** NXP Download *********************************/
+/**  Download the file from the internal memory image to the NXP microcontroller.
 *   This function is visible from outside if COMPILE_FOR_LPC21
 */
 
@@ -224,17 +227,17 @@ static int SendAndVerify(ISP_ENVIRONMENT *IspEnvironment, const char *Command,
 
 
 
-/***************************** PhilipsOutputErrorMessage ***********************/
+/***************************** NxpOutputErrorMessage ***********************/
 /**  Given an error number find and print the appropriate error message.
 \param [in] ErrorNumber The number of the error.
 */
 #if defined COMPILE_FOR_LPC21
 
-#define PhilipsOutputErrorMessage(in)        // Cleanly remove this feature from the embedded version !!
+#define NxpOutputErrorMessage(in)        // Cleanly remove this feature from the embedded version !!
 
 #else
 
-static void PhilipsOutputErrorMessage(unsigned char ErrorNumber)
+static void NxpOutputErrorMessage(unsigned char ErrorNumber)
 {
     switch (ErrorNumber)
     {
@@ -330,7 +333,7 @@ static void PhilipsOutputErrorMessage(unsigned char ErrorNumber)
         break;
     }
 
-    //DebugPrintf(1, "error (%u), see  PhilipsOutputErrorMessage() in lpc21isp.c for help \n\r", ErrorNumber);
+    //DebugPrintf(1, "error (%u), see  NxpOutputErrorMessage() in lpc21isp.c for help \n\r", ErrorNumber);
 }
 #endif // !defined COMPILE_FOR_LPC21
 
@@ -371,13 +374,13 @@ static unsigned char GetAndReportErrorNumber(const char *Answer)
         i++;
     }
 
-    PhilipsOutputErrorMessage(Result);
+    NxpOutputErrorMessage(Result);
 
     return Result;
 }
 
 
-int PhilipsDownload(ISP_ENVIRONMENT *IspEnvironment)
+int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
 {
     unsigned long realsize;
     char Answer[128];
@@ -402,8 +405,6 @@ int PhilipsDownload(ISP_ENVIRONMENT *IspEnvironment)
     unsigned long ivt_CRC;          // CRC over interrupt vector table
     unsigned long block_CRC;
     time_t tStartUpload=0, tDoneUpload=0;
-//    long WatchDogSeconds = 0;
-//    int WaitForWatchDog = 0;
     char tmp_string[64];
     char * cmdstr;
 
@@ -444,80 +445,6 @@ int PhilipsDownload(ISP_ENVIRONMENT *IspEnvironment)
                               sendbuf10, sendbuf11, sendbuf12, sendbuf13, sendbuf14,
                               sendbuf15, sendbuf16, sendbuf17, sendbuf18, sendbuf19};
 #endif
-
-    if (!IspEnvironment->DetectOnly)
-    {
-        // Build up uuencode table
-        uuencode_table[0] = 0x60;           // 0x20 is translated to 0x60 !
-
-        for (i = 1; i < 64; i++)
-        {
-            uuencode_table[i] = (char)(0x20 + i);
-        }
-
-        if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC2XXX)
-        {
-            // Patch 0x14, otherwise it is not running and jumps to boot mode
-
-            ivt_CRC = 0;
-
-            // Clear the vector at 0x14 so it doesn't affect the checksum:
-            for (i = 0; i < 4; i++)
-            {
-                IspEnvironment->BinaryContent[i + 0x14] = 0;
-            }
-
-            // Calculate a native checksum of the little endian vector table:
-            for (i = 0; i < (4 * 8);) {
-                ivt_CRC += IspEnvironment->BinaryContent[i++];
-                ivt_CRC += IspEnvironment->BinaryContent[i++] << 8;
-                ivt_CRC += IspEnvironment->BinaryContent[i++] << 16;
-                ivt_CRC += IspEnvironment->BinaryContent[i++] << 24;
-            }
-
-            /* Negate the result and place in the vector at 0x14 as little endian
-            * again. The resulting vector table should checksum to 0. */
-            ivt_CRC = (unsigned long) (0 - ivt_CRC);
-            for (i = 0; i < 4; i++)
-            {
-                IspEnvironment->BinaryContent[i + 0x14] = (unsigned char)(ivt_CRC >> (8 * i));
-            }
-
-            DebugPrintf(3, "Position 0x14 patched: ivt_CRC = 0x%08lX\n", ivt_CRC);
-        }
-        else if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC17XX ||
-                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC13XX ||
-                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC11XX)
-        {
-            // Patch 0x1C, otherwise it is not running and jumps to boot mode
-
-            ivt_CRC = 0;
-
-            // Clear the vector at 0x1C so it doesn't affect the checksum:
-            for (i = 0; i < 4; i++)
-            {
-                IspEnvironment->BinaryContent[i + 0x1C] = 0;
-            }
-
-            // Calculate a native checksum of the little endian vector table:
-            for (i = 0; i < (4 * 8);) {
-                ivt_CRC += IspEnvironment->BinaryContent[i++];
-                ivt_CRC += IspEnvironment->BinaryContent[i++] << 8;
-                ivt_CRC += IspEnvironment->BinaryContent[i++] << 16;
-                ivt_CRC += IspEnvironment->BinaryContent[i++] << 24;
-            }
-
-            /* Negate the result and place in the vector at 0x1C as little endian
-            * again. The resulting vector table should checksum to 0. */
-            ivt_CRC = (unsigned long) (0 - ivt_CRC);
-            for (i = 0; i < 4; i++)
-            {
-                IspEnvironment->BinaryContent[i + 0x1C] = (unsigned char)(ivt_CRC >> (8 * i));
-            }
-
-            DebugPrintf(3, "Position 0x1C patched: ivt_CRC = 0x%08lX\n", ivt_CRC);
-        }
-    }
 
     DebugPrintf(2, "Synchronizing (ESC to abort)");
 
@@ -570,33 +497,6 @@ int PhilipsDownload(ISP_ENVIRONMENT *IspEnvironment)
 
             sprintf(tmp_string, "StrippedAnswer(Length=%d): '", strippedsize);
             DumpString(3, strippedAnswer, strippedsize, tmp_string);
-
-/*
-            if (strcmp(strippedAnswer, "Bootloader\r\n") == 0 && IspEnvironment->TerminalOnly == 0)
-            {
-                long chars, xtal;
-                unsigned long ticks;
-                chars = (17 * IspEnvironment->BinaryLength + 1) / 10;
-                WatchDogSeconds = (10 * chars + 5) / atol(IspEnvironment->baud_rate) + 10;
-                xtal = atol(IspEnvironment->StringOscillator) * 1000;
-                ticks = (unsigned long)WatchDogSeconds * ((xtal + 15) / 16);
-                DebugPrintf(2, "Entering ISP; re-synchronizing (watchdog = %ld seconds)\n", WatchDogSeconds);
-                sprintf(temp, "T %lu\r\n", ticks);
-                SendComPort(IspEnvironment, temp);
-                ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 1,100);
-                if (strcmp(Answer, "OK\r\n") != 0)
-                {
-                    ResetKeyboardTtySettings();
-                    DebugPrintf(2, "No answer on 'watchdog timer set'\n");
-                    return (NO_ANSWER_WDT);
-                }
-                SendComPort(IspEnvironment, "G 10356\r\n");
-                Sleep(200);
-                nQuestionMarks = 0;
-                WaitForWatchDog = 1;
-                continue;
-            }
-*/
 
             tStartUpload = time(NULL);
 
@@ -730,6 +630,85 @@ int PhilipsDownload(ISP_ENVIRONMENT *IspEnvironment)
             LPCtypes[IspEnvironment->DetectedDevice].RAMSize);
     }
     DebugPrintf(2, " (0x%X)\n", Pos);//strippedAnswer);
+
+    if (!IspEnvironment->DetectOnly)
+    {
+        // Build up uuencode table
+        uuencode_table[0] = 0x60;           // 0x20 is translated to 0x60 !
+
+        for (i = 1; i < 64; i++)
+        {
+            uuencode_table[i] = (char)(0x20 + i);
+        }
+
+        if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC2XXX)
+        {
+            // Patch 0x14, otherwise it is not running and jumps to boot mode
+
+            ivt_CRC = 0;
+
+            // Clear the vector at 0x14 so it doesn't affect the checksum:
+            for (i = 0; i < 4; i++)
+            {
+                IspEnvironment->BinaryContent[i + 0x14] = 0;
+            }
+
+            // Calculate a native checksum of the little endian vector table:
+            for (i = 0; i < (4 * 8);) {
+                ivt_CRC += IspEnvironment->BinaryContent[i++];
+                ivt_CRC += IspEnvironment->BinaryContent[i++] << 8;
+                ivt_CRC += IspEnvironment->BinaryContent[i++] << 16;
+                ivt_CRC += IspEnvironment->BinaryContent[i++] << 24;
+            }
+
+            /* Negate the result and place in the vector at 0x14 as little endian
+            * again. The resulting vector table should checksum to 0. */
+            ivt_CRC = (unsigned long) (0 - ivt_CRC);
+            for (i = 0; i < 4; i++)
+            {
+                IspEnvironment->BinaryContent[i + 0x14] = (unsigned char)(ivt_CRC >> (8 * i));
+            }
+
+            DebugPrintf(3, "Position 0x14 patched: ivt_CRC = 0x%08lX\n", ivt_CRC);
+        }
+        else if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC17XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC13XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC11XX)
+        {
+            // Patch 0x1C, otherwise it is not running and jumps to boot mode
+
+            ivt_CRC = 0;
+
+            // Clear the vector at 0x1C so it doesn't affect the checksum:
+            for (i = 0; i < 4; i++)
+            {
+                IspEnvironment->BinaryContent[i + 0x1C] = 0;
+            }
+
+            // Calculate a native checksum of the little endian vector table:
+            for (i = 0; i < (4 * 8);) {
+                ivt_CRC += IspEnvironment->BinaryContent[i++];
+                ivt_CRC += IspEnvironment->BinaryContent[i++] << 8;
+                ivt_CRC += IspEnvironment->BinaryContent[i++] << 16;
+                ivt_CRC += IspEnvironment->BinaryContent[i++] << 24;
+            }
+
+            /* Negate the result and place in the vector at 0x1C as little endian
+            * again. The resulting vector table should checksum to 0. */
+            ivt_CRC = (unsigned long) (0 - ivt_CRC);
+            for (i = 0; i < 4; i++)
+            {
+                IspEnvironment->BinaryContent[i + 0x1C] = (unsigned char)(ivt_CRC >> (8 * i));
+            }
+
+            DebugPrintf(3, "Position 0x1C patched: ivt_CRC = 0x%08lX\n", ivt_CRC);
+        }
+        else
+        {
+          DebugPrintf(1, "Internal error: wrong chip variant %d (detected device %d)\n", LPCtypes[IspEnvironment->DetectedDevice].ChipVariant, IspEnvironment->DetectedDevice);
+          exit(1);
+        }
+    }
 
 #if 0
     DebugPrintf(2, "Read Unique ID:\n");
@@ -1183,13 +1162,6 @@ int PhilipsDownload(ISP_ENVIRONMENT *IspEnvironment)
     else
         DebugPrintf(2, "Download Finished... taking %d seconds\n", tDoneUpload - tStartUpload);
 
-/*
-    if (WaitForWatchDog)
-    {
-        DebugPrintf(2, "Wait for restart, in %d seconds from now\n", WatchDogSeconds - (tDoneUpload - tStartUpload));
-    }
-    else
-*/
     if(IspEnvironment->DoNotStart == 0)
     {
         DebugPrintf(2, "Now launching the brand new code\n");

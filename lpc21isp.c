@@ -1,15 +1,16 @@
 /******************************************************************************
 
-Project:           Portable command line ISP for Philips LPC17XX / LPC2000 family
+Project:           Portable command line ISP for NXP LPC1000 / LPC2000 family
                    and Analog Devices ADUC70xx
 
 Filename:          lpc21isp.c
 
-Compiler:          Microsoft VC 6/7, Microsoft VS2008, GCC Cygwin, GCC Linux, GCC ARM ELF
+Compiler:          Microsoft VC 6/7, Microsoft VS2008, Microsoft VS2010,
+                   GCC Cygwin, GCC Linux, GCC ARM ELF
 
 Author:            Martin Maurer (Martin.Maurer@clibb.de)
 
-Copyright:         (c) Martin Maurer 2003-2010, All rights reserved
+Copyright:         (c) Martin Maurer 2003-2011, All rights reserved
 Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.com
 
     This file is part of lpc21isp.
@@ -325,12 +326,22 @@ Change-History:
 1.82   2011-06-25 Moses McKnight
                   Corrected MaxCopySize for a number of the LPC11xx series
                   Added support for several more LPC11xx and LPC11Cxx series
+1.83   2011-08-02 Martin Maurer
+                  Thanks to Conurus for detecting and fixing a bug with patching checksum
+                  (patching was too early, chip id was not yet available)
+                  (Re-)Added code to start downloaded via "G 0 T", when using LPC1xxx
+                  (Starting code at position 0 seems to work, compare to comment of version 1.70)
+                  Changed some occurances of Philips to NXP
+                  Added -static to Makefile (thanks to Camilo)
+                  Added support for LPC1311/01 and LPC1313/01 (they have separate identifiers)
+                  Correct flash size of LPC1342 to 16 KByte (thanks to Decio)
+                  Abort programming when unknown NXP chip id is detected
 */
 
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.82"
+#define VERSION_STR "1.83"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex
@@ -497,6 +508,10 @@ static void OpenSerialPort(ISP_ENVIRONMENT *IspEnvironment)
 #ifdef B9600
           case    9600: NEWTERMIOS_SETBAUDARTE(B9600); break;
 #endif // B9600
+
+          // Special value
+          // case   32000: NEWTERMIOS_SETBAUDARTE(32000); break;
+
           default:
               {
                   DebugPrintf(1, "unknown baudrate %s\n", IspEnvironment->baud_rate);
@@ -1206,10 +1221,10 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                 continue;
             }
 
-            if (stricmp(argv[i], "-PHILIPSARM") == 0)
+            if (stricmp(argv[i], "-NXPARM") == 0 || stricmp(argv[i], "-PHILIPSARM") == 0)
             {
-                IspEnvironment->micro = PHILIPS_ARM;
-                DebugPrintf(2, "Target: Philips.\n");
+                IspEnvironment->micro = NXP_ARM;
+                DebugPrintf(2, "Target: NXP.\n");
                 continue;
             }
 
@@ -1276,9 +1291,10 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
     if (argc < 5)
     {
         DebugPrintf(2, "\n"
-                       "Portable command line ISP for NXP LPC2000 family and Analog Devices ADUC 70xx\n"
+                       "Portable command line ISP\n"
+                       "for NXP LPC1000 / LPC2000 family and Analog Devices ADUC 70xx\n"
                        "Version " VERSION_STR " compiled for " COMPILED_FOR ": " __DATE__ ", " __TIME__ "\n"
-                       "Copyright (c) by Martin Maurer, 2003-2009, Email: Martin.Maurer@clibb.de\n"
+                       "Copyright (c) by Martin Maurer, 2003-2011, Email: Martin.Maurer@clibb.de\n"
                        "Portions Copyright (c) by Aeolus Development 2004, www.aeolusdevelopment.com\n"
                        "\n");
 
@@ -1289,7 +1305,7 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "         -term        for starting terminal after upload\n"
                        "         -termonly    for starting terminal without an upload\n"
                        "         -localecho   for local echo in terminal\n"
-                       "         -detectonly  detect only used LPC chiptype (PHILIPSARM only)\n"
+                       "         -detectonly  detect only used LPC chiptype (NXPARM only)\n"
                        "         -debug0      for no debug\n"
                        "         -debug3      for progress info only\n"
                        "         -debug5      for full debug\n"
@@ -1311,13 +1327,12 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "         -halfduplex  use halfduplex serial communication (i.e. with K-Line)\n"
                        "         -ADARM       for downloading to an Analog Devices\n"
                        "                      ARM microcontroller ADUC70xx\n"
-                       "         -PHILIPSARM  for downloading to a microcontroller from\n"
-                       "                      NXP(Philips) LPC13xx/LPC17xx/LPC2000 family (default)\n");
+                       "         -NXPARM      for downloading to a NXP LPC1xxx/LPC2xxx (default)\n");
 
         exit(1);
     }
 
-    if (IspEnvironment->micro == PHILIPS_ARM)
+    if (IspEnvironment->micro == NXP_ARM)
     {
         // If StringOscillator is bigger than 100 MHz, there seems to be something wrong
         if (strlen(IspEnvironment->StringOscillator) > 5)
@@ -2041,8 +2056,8 @@ int PerformActions(ISP_ENVIRONMENT *IspEnvironment)
         switch (IspEnvironment->micro)
         {
 #ifdef LPC_SUPPORT
-        case PHILIPS_ARM:
-            downloadResult = PhilipsDownload(IspEnvironment);
+        case NXP_ARM:
+            downloadResult = NxpDownload(IspEnvironment);
             break;
 #endif
 
@@ -2104,7 +2119,7 @@ int main(int argc, char *argv[])
 
     // Initialize ISP Environment
     memset(&IspEnvironment, 0, sizeof(IspEnvironment));       // Clear the IspEnviroment to a known value
-    IspEnvironment.micro       = PHILIPS_ARM;                 // Default Micro
+    IspEnvironment.micro       = NXP_ARM;                     // Default Micro
     IspEnvironment.FileFormat  = FORMAT_HEX;                  // Default File Format
     IspEnvironment.ProgramChip = TRUE;                        // Default to Programming the chip
     IspEnvironment.nQuestionMarks = 100;
@@ -2159,7 +2174,7 @@ int lpctest(char* FileName)
 
     // Initialize ISP Environment
     memset(&IspEnvironment, 0, sizeof(IspEnvironment));        // Clear the IspEnviroment to a known value
-    IspEnvironment.micro        = PHILIPS_ARM;                 // Default Micro
+    IspEnvironment.micro        = NXP_ARM;                     // Default Micro
     IspEnvironment.FileFormat   = FORMAT_HEX;                  // Default File Format
     IspEnvironment.ProgramChip  = TRUE;                        // Default to Programming the chip
     // IspEnvironment.input_file   = FileName;

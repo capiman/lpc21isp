@@ -1,15 +1,16 @@
 /******************************************************************************
 
-Project:           Portable command line ISP for Philips LPC2000 family
+Project:           Portable command line ISP for NXP LPC1000 / LPC2000 family
                    and Analog Devices ADUC70xx
 
 Filename:          lpcprog.h
 
-Compiler:          Microsoft VC 6/7, GCC Cygwin, GCC Linux, GCC ARM ELF
+Compiler:          Microsoft VC 6/7, Microsoft VS2008, Microsoft VS2010,
+                   GCC Cygwin, GCC Linux, GCC ARM ELF
 
 Author:            Martin Maurer (Martin.Maurer@clibb.de)
 
-Copyright:         (c) Martin Maurer 2003-2010, All rights reserved
+Copyright:         (c) Martin Maurer 2003-2011, All rights reserved
 Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.com
 
     This file is part of lpc21isp.
@@ -31,7 +32,7 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 
 /* LPC_RAMSTART, LPC_RAMBASE
 *
-* Used in PhilipsDownload() to decide whether to Flash code or just place in in RAM
+* Used in NxpDownload() to decide whether to Flash code or just place in in RAM
 * (works for .hex files only)
 *
 * LPC_RAMSTART - the Physical start address of the SRAM
@@ -54,7 +55,7 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 #define LPC_RAMSTART_LPC11XX    0x10000000L
 #define LPC_RAMBASE_LPC11XX     0x10000300L
 
-/* Return values used by PhilipsDownload(): reserving all values from 0x1000 to 0x1FFF */
+/* Return values used by NxpDownload(): reserving all values from 0x1000 to 0x1FFF */
 
 #define NO_ANSWER_WDT       0x1000
 #define NO_ANSWER_QM        0x1001
@@ -69,13 +70,13 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 
 #define USER_ABORT_SYNC     0x100A   /* User aborted synchronisation process */
 
-#define UNLOCK_ERROR        0x1100   /* return value is 0x1100 + philips ISP returned value (0 to 255) */
-#define WRONG_ANSWER_PREP   0x1200   /* return value is 0x1200 + philips ISP returned value (0 to 255) */
-#define WRONG_ANSWER_ERAS   0x1300   /* return value is 0x1300 + philips ISP returned value (0 to 255) */
-#define WRONG_ANSWER_WRIT   0x1400   /* return value is 0x1400 + philips ISP returned value (0 to 255) */
-#define WRONG_ANSWER_PREP2  0x1500   /* return value is 0x1500 + philips ISP returned value (0 to 255) */
-#define WRONG_ANSWER_COPY   0x1600   /* return value is 0x1600 + philips ISP returned value (0 to 255) */
-#define FAILED_RUN          0x1700   /* return value is 0x1700 + philips ISP returned value (0 to 255) */
+#define UNLOCK_ERROR        0x1100   /* return value is 0x1100 + NXP ISP returned value (0 to 255) */
+#define WRONG_ANSWER_PREP   0x1200   /* return value is 0x1200 + NXP ISP returned value (0 to 255) */
+#define WRONG_ANSWER_ERAS   0x1300   /* return value is 0x1300 + NXP ISP returned value (0 to 255) */
+#define WRONG_ANSWER_WRIT   0x1400   /* return value is 0x1400 + NXP ISP returned value (0 to 255) */
+#define WRONG_ANSWER_PREP2  0x1500   /* return value is 0x1500 + NXP ISP returned value (0 to 255) */
+#define WRONG_ANSWER_COPY   0x1600   /* return value is 0x1600 + NXP ISP returned value (0 to 255) */
+#define FAILED_RUN          0x1700   /* return value is 0x1700 + NXP ISP returned value (0 to 255) */
 
 #if defined COMPILE_FOR_LPC21
 #ifndef WIN32
@@ -99,6 +100,7 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 
 typedef enum
   {
+  CHIP_VARIANT_NONE,
   CHIP_VARIANT_LPC2XXX,
   CHIP_VARIANT_LPC17XX,
   CHIP_VARIANT_LPC13XX,
@@ -117,7 +119,7 @@ typedef struct
     const CHIP_VARIANT   ChipVariant;
 } LPC_DEVICE_TYPE;
 
-int PhilipsDownload(ISP_ENVIRONMENT *IspEnvironment);
+int NxpDownload(ISP_ENVIRONMENT *IspEnvironment);
 
 unsigned long ReturnValueLpcRamStart(ISP_ENVIRONMENT *IspEnvironment);
 
