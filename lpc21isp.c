@@ -336,12 +336,14 @@ Change-History:
                   Added support for LPC1311/01 and LPC1313/01 (they have separate identifiers)
                   Correct flash size of LPC1342 to 16 KByte (thanks to Decio)
                   Abort programming when unknown NXP chip id is detected
+1.84   2012-09-27 Philip Munts
+                  Added chip id's for more LPC11xx parts, per UM10398 Rev. 11 26 July 2012
 */
 
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.83"
+#define VERSION_STR "1.84"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex
