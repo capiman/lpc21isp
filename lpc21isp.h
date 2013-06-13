@@ -177,6 +177,7 @@ typedef struct
 #endif
 
     unsigned char HalfDuplex;           // Only used for LPC Programming
+    unsigned char WriteDelay;
     unsigned char DetectOnly;
     unsigned char WipeDevice;
     unsigned char Verify;
