@@ -628,6 +628,12 @@ void SendComPortBlock(ISP_ENVIRONMENT *IspEnvironment, const void *s, size_t n)
     write(IspEnvironment->fdCom, s, n);
 
 #endif // defined COMPILE_FOR_LINUX || defined COMPILE_FOR_LPC21
+
+    if (IspEnvironment->WriteDelay == 1)
+    {
+	    usleep(100*1000); // 100 ms delay after each block (makes lpc21isp to work with bad UARTs)
+    }
+
 }
 
 /***************************** SendComPort ******************************/
@@ -1224,6 +1230,13 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                 continue;
             }
 
+	    if (stricmp(argv[i], "-writedelay") == 0)
+            {
+                IspEnvironment->WriteDelay = 1;
+                DebugPrintf(3, "Write delay enabled.\n");
+                continue;
+            }
+
             if (stricmp(argv[i], "-ADARM") == 0)
             {
                 IspEnvironment->micro = ANALOG_DEVICES_ARM;
@@ -1335,6 +1348,7 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "                      sector. To detect errors in writing to Flash ROM\n"
                        "         -logfile     for enabling logging of terminal output to lpc21isp.log\n"
                        "         -halfduplex  use halfduplex serial communication (i.e. with K-Line)\n"
+                       "         -writedelay  Add delay after serial port writes (for compatibility)\n"
                        "         -ADARM       for downloading to an Analog Devices\n"
                        "                      ARM microcontroller ADUC70xx\n"
                        "         -NXPARM      for downloading to a NXP LPC1xxx/LPC2xxx (default)\n");
