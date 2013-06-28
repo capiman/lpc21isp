@@ -43,8 +43,14 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 *                Any interrupt vectors must be copied to 0x4000,0000 and remapped to 0x0000,0000
 *                by the startup code.
 */
+#define LPC_RAMSTART_LPC43XX    0x10000000L
+#define LPC_RAMBASE_LPC43XX     0x10000200L
+
 #define LPC_RAMSTART_LPC2XXX    0x40000000L
 #define LPC_RAMBASE_LPC2XXX     0x40000200L
+
+#define LPC_RAMSTART_LPC18XX    0x10000000L
+#define LPC_RAMBASE_LPC18XX     0x10000200L
 
 #define LPC_RAMSTART_LPC17XX    0x10000000L
 #define LPC_RAMBASE_LPC17XX     0x10000200L
@@ -54,6 +60,9 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 
 #define LPC_RAMSTART_LPC11XX    0x10000000L
 #define LPC_RAMBASE_LPC11XX     0x10000300L
+
+#define LPC_RAMSTART_LPC8XX     0x10000000L
+#define LPC_RAMBASE_LPC8XX      0x10000270L
 
 /* Return values used by NxpDownload(): reserving all values from 0x1000 to 0x1FFF */
 
@@ -70,6 +79,8 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 
 #define USER_ABORT_SYNC     0x100A   /* User aborted synchronisation process */
 
+#define UNKNOWN_LPC         0x100B   /* Unknown LPC detected */
+
 #define UNLOCK_ERROR        0x1100   /* return value is 0x1100 + NXP ISP returned value (0 to 255) */
 #define WRONG_ANSWER_PREP   0x1200   /* return value is 0x1200 + NXP ISP returned value (0 to 255) */
 #define WRONG_ANSWER_ERAS   0x1300   /* return value is 0x1300 + NXP ISP returned value (0 to 255) */
@@ -77,6 +88,7 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 #define WRONG_ANSWER_PREP2  0x1500   /* return value is 0x1500 + NXP ISP returned value (0 to 255) */
 #define WRONG_ANSWER_COPY   0x1600   /* return value is 0x1600 + NXP ISP returned value (0 to 255) */
 #define FAILED_RUN          0x1700   /* return value is 0x1700 + NXP ISP returned value (0 to 255) */
+#define WRONG_ANSWER_BTBNK  0x1800   /* return value is 0x1800 + NXP ISP returned value (0 to 255) */
 
 #if defined COMPILE_FOR_LPC21
 #ifndef WIN32
@@ -101,15 +113,20 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 typedef enum
   {
   CHIP_VARIANT_NONE,
+  CHIP_VARIANT_LPC43XX,
   CHIP_VARIANT_LPC2XXX,
+  CHIP_VARIANT_LPC18XX,
   CHIP_VARIANT_LPC17XX,
   CHIP_VARIANT_LPC13XX,
-  CHIP_VARIANT_LPC11XX
+  CHIP_VARIANT_LPC11XX,
+  CHIP_VARIANT_LPC8XX
   } CHIP_VARIANT;
 
 typedef struct
 {
     const unsigned long  id;
+    const unsigned long  id2;
+    const unsigned int   EvalId2;
     const char *Product;
     const unsigned int   FlashSize;     /* in kiB, for informational purposes only */
     const unsigned int   RAMSize;       /* in kiB, for informational purposes only */
