@@ -1495,7 +1495,7 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
         }
         else if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC8XX)
         {
-            sprintf(tmpString, "G 0 T\r\n", IspEnvironment->StartAddress & ~1);
+            sprintf(tmpString, "G 0 T\r\n");
         }
         else
         {

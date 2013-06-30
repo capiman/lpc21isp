@@ -623,7 +623,7 @@ void ControlXonXoffSerialPort(ISP_ENVIRONMENT *IspEnvironment, unsigned char Xon
 #if defined COMPILE_FOR_LINUX
 void ControlXonXoffSerialPort(ISP_ENVIRONMENT *IspEnvironment, unsigned char XonXoff)
 {
-    if(tcgetattr(IspEnvironment->fdCom, TCSANOW, &IspEnvironment->newtio))
+    if(tcgetattr(IspEnvironment->fdCom, &IspEnvironment->newtio))
     {
        DebugPrintf(1, "Could not get serial port behaviour\n");
        exit(3);
