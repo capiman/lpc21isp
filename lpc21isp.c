@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Project:           Portable command line ISP for NXP LPC1000 / LPC2000 family
+Project:           Portable command line ISP for NXP LPC family
                    and Analog Devices ADUC70xx
 
 Filename:          lpc21isp.c
@@ -370,12 +370,15 @@ Change-History:
                   Workaround for lost characters of LPC8XX
 1.91   2013-06-28 Torsten Lang, Uwe Schneider GmbH
                   Minor bugfix for the residual data handling
+1.92   2013-06-29 Martin Maurer
+                  Thanks to Phil for reporting Linux compile errors
+                  Update README
 */
 
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.91"
+#define VERSION_STR "1.92"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex
@@ -623,7 +626,7 @@ void ControlXonXoffSerialPort(ISP_ENVIRONMENT *IspEnvironment, unsigned char Xon
 #if defined COMPILE_FOR_LINUX
 void ControlXonXoffSerialPort(ISP_ENVIRONMENT *IspEnvironment, unsigned char XonXoff)
 {
-    if(tcgetattr(IspEnvironment->fdCom, TCSANOW, &IspEnvironment->newtio))
+    if(tcgetattr(IspEnvironment->fdCom, &IspEnvironment->newtio))
     {
        DebugPrintf(1, "Could not get serial port behaviour\n");
        exit(3);
