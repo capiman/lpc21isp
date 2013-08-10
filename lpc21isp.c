@@ -723,7 +723,6 @@ void SendComPort(ISP_ENVIRONMENT *IspEnvironment, const char *s)
 /**  Performs a timer tick.  In this simple case all we do is count down
 with protection against underflow and wrapping at the low end.
 */
-#if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static void SerialTimeoutTick(ISP_ENVIRONMENT *IspEnvironment)
 {
     if (IspEnvironment->serial_timeout_count <= 1)
@@ -735,7 +734,6 @@ static void SerialTimeoutTick(ISP_ENVIRONMENT *IspEnvironment)
         IspEnvironment->serial_timeout_count--;
     }
 }
-#endif
 
 /***************************** ReceiveComPortBlock **********************/
 /**  Receives a buffer from the open com port. Returns all the characters
@@ -790,12 +788,10 @@ static void ReceiveComPortBlock(ISP_ENVIRONMENT *IspEnvironment,
     sprintf(tmp_string, "Read(Length=%ld): ", (*real_size));
     DumpString(5, answer, (*real_size), tmp_string);
 
-#if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
     if (*real_size == 0)
     {
         SerialTimeoutTick(IspEnvironment);
     }
-#endif
 }
 
 
