@@ -172,6 +172,7 @@ typedef struct
     FILE_LIST *f_list;                  // List of files to read in.
     int nQuestionMarks; // how many times to try to synchronise
     int DoNotStart;
+    int BootHold;
     char *serial_port;                  // Name of the serial port to use to
                                         // communicate with the microcontroller.
                                         // Read from the command line.

@@ -373,12 +373,28 @@ Change-History:
 1.92   2013-06-29 Martin Maurer
                   Thanks to Phil for reporting Linux compile errors
                   Update README
+1.93   2013-07-05 Andrew Pines
+                  changed Makefile to exclude "-static" from CFLAGS when building for OS X
+                  changed serial timeout for *nix to use select
+                  added -boothold argument to assert ISP throughtout programming sequence
+                  added support for -try<n> command line argument (was in help, didn't actually work)
+1.94   2013-08-10 Martin Maurer
+                  Add (assumed) part id values for LPC4333 and LPC4337
+                  Correct table entries for all LPC43xx part id numbers
+                  (missing flag for two word part ids and second word for LPC4333 and LPC4353)
+                  Merge in optimization (thanks to Stefan) to skip empty sectors
+                  Correct help output of "-boothold"
+                  Add workaround table entry for LPC4357 and word1 equal to 0x0EF60000
+                  Bugfix for wrong check of word0/word1 combination
+                  Correct a lot entries in lpc property table of LPC18xx and LPC43xx
+                  LPC18xx and LPC43xx: Add warning message, that wipe erases only bank A
+
 */
 
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.92"
+#define VERSION_STR "1.94"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex
@@ -781,10 +797,34 @@ static void ReceiveComPortBlock(ISP_ENVIRONMENT *IspEnvironment,
 
 #endif // defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 
-#if defined COMPILE_FOR_LINUX || defined COMPILE_FOR_LPC21
+#if defined COMPILE_FOR_LPC21
 
     *real_size = read(IspEnvironment->fdCom, answer, max_size);
 
+#endif // defined COMPILE_FOR_LPC21
+
+#if defined COMPILE_FOR_LINUX
+    {
+        fd_set
+            readSet;
+        struct timeval
+            timeVal;
+
+        FD_ZERO(&readSet);                             // clear the set
+        FD_SET(IspEnvironment->fdCom,&readSet);        // add this descriptor to the set
+        timeVal.tv_sec=0;                              // set up the timeout waiting for one to come ready (500ms)
+        timeVal.tv_usec=500*1000;
+        if(select(FD_SETSIZE,&readSet,NULL,NULL,&timeVal)==1)    // wait up to 500 ms or until our data is ready
+        {
+            *real_size=read(IspEnvironment->fdCom, answer, max_size);
+        }
+        else
+        {
+            // timed out, show no characters received and timer expired
+            *real_size=0;
+            IspEnvironment->serial_timeout_count=0;
+        }
+    }
 #endif // defined COMPILE_FOR_LINUX
 
     sprintf(tmp_string, "Read(Length=%ld): ", (*real_size));
@@ -1341,12 +1381,37 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                 continue;
             }
 
-            if (stricmp(argv[i], "-DoNotStart") == 0)
+            if (stricmp(argv[i], "-boothold") == 0)
+            {
+                IspEnvironment->BootHold = 1;
+                DebugPrintf(3, "hold EnableBootLoader asserted throughout programming sequence.\n");
+                continue;
+            }
+
+            if (stricmp(argv[i], "-donotstart") == 0)
             {
                 IspEnvironment->DoNotStart = 1;
                 DebugPrintf(3, "Do NOT start MCU after programming.\n");
                 continue;
             }
+
+            if(strnicmp(argv[i],"-try", 4) == 0)
+            {
+                int
+                    retry;
+                retry=atoi(&argv[i][4]);
+                if(retry>0)
+                {
+                    IspEnvironment->nQuestionMarks=retry;
+                    DebugPrintf(3, "Retry count: %d.\n", IspEnvironment->nQuestionMarks);
+                }
+                else
+                {
+                    fprintf(stderr,"invalid argument for -try: \"%s\"\n",argv[i]);
+                }
+                continue;
+            }
+
 
             if (stricmp(argv[i], "-control") == 0)
             {
@@ -1476,6 +1541,7 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "         -wipe        Erase entire device before upload\n"
                        "         -control     for controlling RS232 lines for easier booting\n"
                        "                      (Reset = DTR, EnableBootLoader = RTS)\n"
+                       "         -boothold    hold EnableBootLoader asserted throughout sequence\n"
 #ifdef INTEGRATED_IN_WIN_APP
                        "         -nosync      Do not synchronize device via '?'\n"
 #endif
@@ -1608,7 +1674,10 @@ void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
             Sleep(500);
             // Clear the RTS line after having reset the micro
             // Needed for the "GO <Address> <Mode>" ISP command to work */
-            ControlModemLines(IspEnvironment, 0, 0);
+            if(!IspEnvironment->BootHold)
+            {
+                ControlModemLines(IspEnvironment, 0, 0);
+            }
             break;
 
         /* Reset and start uploaded program                     */
@@ -2367,6 +2436,7 @@ int main(int argc, char *argv[])
     IspEnvironment.ProgramChip = TRUE;                        // Default to Programming the chip
     IspEnvironment.nQuestionMarks = 100;
     IspEnvironment.DoNotStart = 0;
+    IspEnvironment.BootHold = 0;
     ReadArguments(&IspEnvironment, argc, argv);               // Read and parse the command line
 
     return PerformActions(&IspEnvironment);                   // Do as requested !
