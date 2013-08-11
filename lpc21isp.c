@@ -1211,7 +1211,7 @@ void ReceiveComPort(ISP_ENVIRONMENT *IspEnvironment,
         if (residual_data[0] == '\0')
         {
             /* Receive new data */
-            ReceiveComPortBlock(IspEnvironment, Answer + (*RealSize), MaxSize - 1 - (*RealSize), &tmp_realsize);
+            ReceiveComPortBlock(IspEnvironment, Answer + (*RealSize), MaxSize - (*RealSize), &tmp_realsize);
         }
         else
         {
