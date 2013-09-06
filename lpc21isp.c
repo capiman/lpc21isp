@@ -388,13 +388,15 @@ Change-History:
                   Bugfix for wrong check of word0/word1 combination
                   Correct a lot entries in lpc property table of LPC18xx and LPC43xx
                   LPC18xx and LPC43xx: Add warning message, that wipe erases only bank A
+1.95   2013-09-06 Moses McKnight
+                  Added devices: LPC1315, LPC1316, LPC1317, LPC1345, LPC1346, LPC1347
 
 */
 
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.94"
+#define VERSION_STR "1.95"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex

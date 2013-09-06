@@ -177,6 +177,13 @@ static LPC_DEVICE_TYPE LPCtypes[] =
    { 0x3D01402B, 0x00000000, 0, "1342",          16,   4,  4, 1024, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
    { 0x3D00002B, 0x00000000, 0, "1343",          32,   8,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
 
+   { 0x3A010523, 0x00000000, 0, "1315",          32,   8,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
+   { 0x1A018524, 0x00000000, 0, "1316",          48,   8, 12, 4096, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
+   { 0x1A020525, 0x00000000, 0, "1317",          64,   8, 16, 4096, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
+   { 0x28010541, 0x00000000, 0, "1345",          32,   8,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
+   { 0x08018542, 0x00000000, 0, "1346",          48,   8, 12, 4096, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
+   { 0x08020543, 0x00000000, 0, "1347",          64,   8, 16, 4096, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
+
    { 0x25001118, 0x00000000, 0, "1751",          32,   8,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC17XX },
    { 0x25001121, 0x00000000, 0, "1752",          64,  16, 16, 4096, SectorTable_17xx, CHIP_VARIANT_LPC17XX },
    { 0x25011722, 0x00000000, 0, "1754",         128,  32, 18, 4096, SectorTable_17xx, CHIP_VARIANT_LPC17XX },
