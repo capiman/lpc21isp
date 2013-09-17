@@ -81,6 +81,16 @@ static const unsigned int SectorTable_213x[] =
      4096,  4096,  4096,  4096
 };
 
+// Used for LPC11U3x devices
+static const unsigned int SectorTable_11U3x[] =
+{
+     4096,  4096,  4096,  4096,  4096,  4096,  4096,  4096,
+     4096,  4096,  4096,  4096,  4096,  4096,  4096,  4096,
+     4096,  4096,  4096,  4096,  4096,  4096,  4096,  4096,
+     4096,  4096,  4096,  4096,  4096,  4096,  4096,  4096
+};
+
+
 // Used for LPC17xx devices
 static const unsigned int SectorTable_17xx[] =
 {
@@ -169,6 +179,21 @@ static LPC_DEVICE_TYPE LPCtypes[] =
    { 0x0365202B, 0x00000000, 0, "1225.../321",   80,  20, 32, 4096, SectorTable_17xx, CHIP_VARIANT_LPC11XX },
    { 0x0366002B, 0x00000000, 0, "1226",          96,  24, 32, 4096, SectorTable_17xx, CHIP_VARIANT_LPC11XX },
    { 0x0367002B, 0x00000000, 0, "1227",         128,  32, 32, 4096, SectorTable_17xx, CHIP_VARIANT_LPC11XX },
+
+   { 0x095C802B, 0x295C802B, 1, "11U12.../201",  16,   4,  4, 4096, SectorTable_17xx, CHIP_VARIANT_LPC11XX },
+   { 0x097A802B, 0x297A802B, 1, "11U13.../201",  24,   4,  6, 4096, SectorTable_17xx, CHIP_VARIANT_LPC11XX },
+   { 0x0998802B, 0x2998802B, 1, "11U14.../201",  32,   4,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC11XX },
+   { 0x2972402B, 0x00000000, 0, "11U23.../301",  32,   6,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC11XX },
+   { 0x2988402B, 0x00000000, 0, "11U24.../301",  32,   8,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC11XX },
+   { 0x2980002B, 0x00000000, 0, "11U24.../401",  32,   8,  8, 4096, SectorTable_17xx, CHIP_VARIANT_LPC11XX },
+   
+   { 0x0003D440, 0x00000000, 0, "11U34.../311",  40,   8,   10, 4096, SectorTable_11U3x, CHIP_VARIANT_LPC11XX },
+   { 0x0001CC40, 0x00000000, 0, "11U34.../421",  48,   10,  12, 4096, SectorTable_11U3x, CHIP_VARIANT_LPC11XX },   
+   { 0x0001BC40, 0x00000000, 0, "11U35.../401",  64,   10,  14, 4096, SectorTable_11U3x, CHIP_VARIANT_LPC11XX },   
+   { 0x0000BC40, 0x00000000, 0, "11U35.../501",  64,   12,  14, 4096, SectorTable_11U3x, CHIP_VARIANT_LPC11XX },   
+   { 0x00019C40, 0x00000000, 0, "11U36.../401",  96,   10,  24, 4096, SectorTable_11U3x, CHIP_VARIANT_LPC11XX },   
+   { 0x00017C40, 0x00000000, 0, "11U37.../401",  128,  10,  32, 4096, SectorTable_11U3x, CHIP_VARIANT_LPC11XX },   
+   { 0x00007C40, 0x00000000, 0, "11U37.../501",  128,  12,  32, 4096, SectorTable_11U3x, CHIP_VARIANT_LPC11XX },
 
    { 0x2C42502B, 0x00000000, 0, "1311",           8,   4,  2, 1024, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
    { 0x1816902B, 0x00000000, 0, "1311/01",        8,   4,  2, 1024, SectorTable_17xx, CHIP_VARIANT_LPC13XX },
