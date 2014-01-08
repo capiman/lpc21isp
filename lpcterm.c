@@ -10,7 +10,7 @@ Compiler:          Microsoft VC 6/7, Microsoft VS2008, Microsoft VS2010,
 
 Author:            Martin Maurer (Martin.Maurer@clibb.de)
 
-Copyright:         (c) Martin Maurer 2003-2011, All rights reserved
+Copyright:         (c) Martin Maurer 2003-2014, All rights reserved
 Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.com
 
     This file is part of lpc21isp.
