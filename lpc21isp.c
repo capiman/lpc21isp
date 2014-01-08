@@ -388,13 +388,19 @@ Change-History:
                   Bugfix for wrong check of word0/word1 combination
                   Correct a lot entries in lpc property table of LPC18xx and LPC43xx
                   LPC18xx and LPC43xx: Add warning message, that wipe erases only bank A
+1.95   2014-01-08 Martin Maurer
+                  Add a lot of new chip ids for LPC1763, LPC11Exx, LPC11Uxx
+                  (completely untested because I don't have these chips)
+                  Corrected checking of 2 field chip ids (must be masked)
+                  Corrected Makefile (-static)
+                  Move while directory with files into a subdirectory
 
 */
 
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.94"
+#define VERSION_STR "1.95"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex

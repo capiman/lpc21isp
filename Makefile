@@ -11,11 +11,13 @@ ifeq ($(OSTYPE),)
 OSTYPE		= $(shell uname)
 endif
 
+CFLAGS		+= -Wall
+
 ifneq ($(findstring Darwin,$(OSTYPE)),)
 CFLAGS+=-D__APPLE__
+else
+CFLAGS		+= -static
 endif
-
-CFLAGS	+= -Wall -static
 
 adprog.o: adprog.c $(GLOBAL_DEP)
 	$(CC) $(CDEBUG) $(CFLAGS) -c -o adprog.o adprog.c
