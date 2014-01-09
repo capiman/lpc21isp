@@ -403,13 +403,19 @@ Change-History:
                   - Enable SerialTimeoutTick
        2014-01-08 Martin Maurer merged bugfix by justyn:
                   - Fix the total sector size fields for 1114.../323 and 1114.../333
-
+       2014-01-08 Martin Maurer merged bugfix by imyller:
+                  - Support for bad UARTs: added -writedelay command-line switch
+1.97   2014-01-09 Martin Maurer
+                  Add some new chip ids for LPC11xx
+                  Updated .gitignore file (Now with ignored *.layout)
+                  Removed *.layout from lpc21isp project
+                  Removed *.depend from lpc21isp project
 */
 
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.96"
+#define VERSION_STR "1.97"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex
