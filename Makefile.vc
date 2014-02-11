@@ -20,7 +20,7 @@ lpc21isp.obj: lpc21isp.c $(GLOBAL_DEP)
     $(CC) -c $(CFLAGS) lpc21isp.c
 
 lpc21isp.exe: lpc21isp.obj adprog.obj lpcprog.obj lpcterm.obj
-    $(CC) /Felpc21isp.exe lpc21isp.obj adprog.obj lpcprog.obj lpcterm.obj
+    $(CC) /Felpc21isp.exe lpc21isp.obj adprog.obj lpcprog.obj lpcterm.obj winmm.lib
 
 clean:
     $(RM) adprog.obj lpcprog.obj lpcterm.obj lpc21isp.obj lpc21isp.exe vc*.pdb

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-Project:           Portable command line ISP for NXP LPC1000 / LPC2000 family
+Project:           Portable command line ISP for NXP LPC family
                    and Analog Devices ADUC70xx
 
 Filename:          lpc21isp.c
@@ -10,7 +10,7 @@ Compiler:          Microsoft VC 6/7, Microsoft VS2008, Microsoft VS2010,
 
 Author:            Martin Maurer (Martin.Maurer@clibb.de)
 
-Copyright:         (c) Martin Maurer 2003-2011, All rights reserved
+Copyright:         (c) Martin Maurer 2003-2014, All rights reserved
 Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.com
 
     This file is part of lpc21isp.
@@ -217,7 +217,7 @@ Change-History:
                   Made compileable again for linux and windows
                   Fixed bug in ClearSerialPortBuffers (linux)
 1.53   2008-02-25 Changes by Michael Roth
-                  Get priority of debug messages wih -control right
+                  Get priority of debug messages with -control right
 1.54   2008-03-03 Martin Maurer
                   Try to bring lpc21isp back to a useable state in Windows, Cygwin, Linux and Mac OS.
                   Merged in changes by Erika Stefanini, which were done only for old version 1.49:
@@ -237,7 +237,7 @@ Change-History:
                   software compiled with Borland C++ Builder 5. I had to do some minor changes
                   for Borland (see defined __BORLANDC__) and modified to code slightly to have
                   some simple callbacks for screen i/o (see define INTEGRATED_IN_WIN_APP).
-                  Please notet that I don *not* check / modify the part for AnalogDevices !!
+                  Please note that I do *not* check / modify the part for AnalogDevices !!
                   Besides that I fixed some minor issues:
                   added dcb.fOutxCtsFlow = FALSE and dcb.fOutxDsrFlow = FALSE (sometimes required)
                   Now comparing one character less of answer to "Now launching ... code" command
@@ -293,7 +293,7 @@ Change-History:
                   Added support for multiple HEX files, besed on internal version 1.37B.
                   NOTE: this feature is used in production in 1.37B but is not tested in this version.
                   Added numeric debug level command line switch -debugn, n=[0-5]
-                  Added command line scitch -try n to specify nQuestionMarks limit. Defaul: 100
+                  Added command line scitch -try n to specify nQuestionMarks limit. Default: 100
                   Merged in DoNotStart patch from cgommel_new
                   Static functions declarations moved from lpc21isp.h to this file
                   Modified LoadFile() to return error_code instead exit(1)
@@ -341,17 +341,81 @@ Change-History:
 1.85   2012-12-13 Philip Munts
                   Fixed conditional compilation logic in lpc21isp.h to allow compiling for ARM Linux.
 1.86   2012-12-14 diskrepairman
-                  added devices: LPC1114/203 LPC1114/303 LPC1114/323 LPC1114/333 LPC1115/303
+                  Added devices: LPC1114/203 LPC1114/303 LPC1114/323 LPC1114/333 LPC1115/303
 1.87   2012-12-18 Philip Munts
                   Added a section of code to ResetTarget() in lpc21isp.c to allow using Linux GPIO pin
                   to control reset and ISP.
-
+1.88   2013-04-25 Torsten Lang, Uwe Schneider GmbH
+                  Fixed answer evaluation
+                  Added sector tables for LPC1833
+                  XON/XOFF handling according to LPC manual
+                  Changed COMMTIMEOUTS settings according to MS help
+                  Changed waiting code from tick counting to system time usage
+                  Set MM timers to 1ms resolution (otherwise waiting in the serial driver is limited to multiples of 10ms)
+                  Send all commands with <CR><LF> according to NXP UM
+                  Change answer evaluation to match at least LPC17xx and LPC18xx families (LPC17xx just mirrors the first character of
+                    the LF sequence, LPC18xx mirrors the first character and adds an <LF> which then will lead to a <CR><LF><LF>
+                    sequence, all other lines are terminated with <CR><LF> as documented)
+                  Change answer formatting by filtering leading <LF> characters because they can be left over from a previous response
+                  Store residual data of an answer (required for the J command which will deliver two words in case of the LPC18xx)
+                  Expanded configuration table by second identification word and usage flag
+                  Do a two stage scan in case that a device with two identification words is detected
+1.89   2013-06-27 Martin Maurer
+                  Thanks to Manuel and Henri for bugfixes and speed-ups
+                  Bugfix: In case of LPC8XX, XON/XOFF handling must be switched off,
+                  otherwise download gets broken, because XON/XOFF are filtered out...
+1.90   2013-06-27 Martin Maurer
+                  Add checksum calculation for LPC8XX
+                  winmm function only available in MSVC, put ifdefs around
+                  Workaround for lost characters of LPC8XX
+1.91   2013-06-28 Torsten Lang, Uwe Schneider GmbH
+                  Minor bugfix for the residual data handling
+1.92   2013-06-29 Martin Maurer
+                  Thanks to Phil for reporting Linux compile errors
+                  Update README
+1.93   2013-07-05 Andrew Pines
+                  changed Makefile to exclude "-static" from CFLAGS when building for OS X
+                  changed serial timeout for *nix to use select
+                  added -boothold argument to assert ISP throughtout programming sequence
+                  added support for -try<n> command line argument (was in help, didn't actually work)
+1.94   2013-08-10 Martin Maurer
+                  Add (assumed) part id values for LPC4333 and LPC4337
+                  Correct table entries for all LPC43xx part id numbers
+                  (missing flag for two word part ids and second word for LPC4333 and LPC4353)
+                  Merge in optimization (thanks to Stefan) to skip empty sectors
+                  Correct help output of "-boothold"
+                  Add workaround table entry for LPC4357 and word1 equal to 0x0EF60000
+                  Bugfix for wrong check of word0/word1 combination
+                  Correct a lot entries in lpc property table of LPC18xx and LPC43xx
+                  LPC18xx and LPC43xx: Add warning message, that wipe erases only bank A
+1.95   2014-01-08 Martin Maurer
+                  Add a lot of new chip ids for LPC1763, LPC11Exx, LPC11Uxx
+                  (completely untested because I don't have these chips)
+                  Corrected checking of 2 field chip ids (must be masked)
+                  Corrected Makefile (-static)
+                  Move while directory with files into a subdirectory
+1.96   2014-01-08 Martin Maurer merged changes by Moses McKnight
+                  Added devices: LPC1315, LPC1316, LPC1317, LPC1345, LPC1346, LPC1347
+                  Add .gitignore file (MM: Removed *.layout)
+                  Remove lpc21isp.depend
+       2014-01-08 Martin Maurer merged bugfix by smartavionics:
+                  - Wrong length in ReceiveComPort
+                  - Enable SerialTimeoutTick
+       2014-01-08 Martin Maurer merged bugfix by justyn:
+                  - Fix the total sector size fields for 1114.../323 and 1114.../333
+       2014-01-08 Martin Maurer merged bugfix by imyller:
+                  - Support for bad UARTs: added -writedelay command-line switch
+1.97   2014-01-09 Martin Maurer
+                  Add some new chip ids for LPC11xx
+                  Updated .gitignore file (Now with ignored *.layout)
+                  Removed *.layout from lpc21isp project
+                  Removed *.depend from lpc21isp project
 */
 
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.87"
+#define VERSION_STR "1.97"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex
@@ -374,18 +438,6 @@ static int AddFileHex(ISP_ENVIRONMENT *IspEnvironment, const char *arg);
 static int AddFileBinary(ISP_ENVIRONMENT *IspEnvironment, const char *arg);
 static int LoadFile(ISP_ENVIRONMENT *IspEnvironment, const char *filename, int FileFormat);
 
-#define ERR_RECORD_TYPE_LOADFILE	55 /** File record type not yet implemented. */
-#define ERR_ALLOC_FILE_LIST 60
-#define ERR_FILE_OPEN_HEX	61	/**< Couldn't open hex file. */
-#define ERR_FILE_SIZE_HEX	62	/**< Unexpected hex file size. */
-#define ERR_FILE_ALLOC_HEX	63	/**< Couldn't allocate enough memory for hex file. */
-#define ERR_FILE_ALLOC_BIN	64	/**< Couldn't allocate enough memory for bin file. */
-#define ERR_FILE_RECST_HEX	65	/**< Can't find start of record indicator for Intel Hex file.*/
-#define ERR_FILE_OPEN_BIN	66	/**< Couldn't open binary file. */
-#define ERR_FILE_SIZE_BIN	67	/**< Unexpected binary file size. */
-#define ERR_FILE_WRITE_BIN	68	/**< Couldn't write debug binary file to disk. How's that for ironic? */
-#define ERR_MEMORY_RANGE    69  /**< Out of memory range. */
-
 /************* Portability layer. Serial and console I/O differences    */
 /* are taken care of here.                                              */
 
@@ -394,6 +446,11 @@ static void OpenSerialPort(ISP_ENVIRONMENT *IspEnvironment)
 {
     DCB    dcb;
     COMMTIMEOUTS commtimeouts;
+
+#ifdef _MSC_VER
+    /* Torsten Lang 2013-05-06 Switch to higher timer resolution (we want to use 1ms timeouts in the serial device driver!) */
+    (void)timeBeginPeriod(1UL);
+#endif // _MSC_VER
 
     IspEnvironment->hCom = CreateFile(IspEnvironment->serial_port, GENERIC_READ | GENERIC_WRITE,0,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
 
@@ -411,8 +468,8 @@ static void OpenSerialPort(ISP_ENVIRONMENT *IspEnvironment)
     dcb.StopBits    = ONESTOPBIT;
     dcb.Parity      = NOPARITY;
     dcb.fDtrControl = DTR_CONTROL_DISABLE;
-    dcb.fOutX       = FALSE;
-    dcb.fInX        = FALSE;
+    dcb.fOutX       = TRUE; // TL TODO - according to LPC manual! FALSE;
+    dcb.fInX        = TRUE; // TL TODO - according to LPC manual! FALSE;
     dcb.fNull       = FALSE;
     dcb.fRtsControl = RTS_CONTROL_DISABLE;
 
@@ -445,8 +502,9 @@ static void OpenSerialPort(ISP_ENVIRONMENT *IspEnvironment)
 
     SetCommMask(IspEnvironment->hCom, EV_RXCHAR | EV_TXEMPTY);
 
+    // Torsten Lang 2013-05-06: ReadFile may hang indefinitely with MAXDWORD/0/1/0/0 on FTDI devices!!!
     commtimeouts.ReadIntervalTimeout         = MAXDWORD;
-    commtimeouts.ReadTotalTimeoutMultiplier  =    0;
+    commtimeouts.ReadTotalTimeoutMultiplier  = MAXDWORD;
     commtimeouts.ReadTotalTimeoutConstant    =    1;
     commtimeouts.WriteTotalTimeoutMultiplier =    0;
     commtimeouts.WriteTotalTimeoutConstant   =    0;
@@ -555,6 +613,11 @@ static void OpenSerialPort(ISP_ENVIRONMENT *IspEnvironment)
 static void CloseSerialPort(ISP_ENVIRONMENT *IspEnvironment)
 {
     CloseHandle(IspEnvironment->hCom);
+
+#ifdef _MSC_VER
+    /* Torsten Lang 2013-05-06 Switch back timer resolution */
+    (void)timeEndPeriod(1UL);
+#endif // _MSC_VER
 }
 
 #endif // defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
@@ -570,6 +633,60 @@ static void CloseSerialPort(ISP_ENVIRONMENT *IspEnvironment)
 }
 #endif // defined COMPILE_FOR_LINUX
 
+#if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
+void ControlXonXoffSerialPort(ISP_ENVIRONMENT *IspEnvironment, unsigned char XonXoff)
+{
+    DCB dcb;
+
+    GetCommState(IspEnvironment->hCom, &dcb);
+
+    if(XonXoff)
+    {
+        dcb.fOutX = TRUE;
+        dcb.fInX  = TRUE;
+    }
+    else
+    {
+        dcb.fOutX = FALSE;
+        dcb.fInX  = FALSE;
+    }
+
+    if (SetCommState(IspEnvironment->hCom, &dcb) == 0)
+    {
+        DebugPrintf(1, "Can't set XonXoff ! - Error: %ld", GetLastError());
+        exit(3);
+    }
+}
+
+#endif // defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
+
+#if defined COMPILE_FOR_LINUX
+void ControlXonXoffSerialPort(ISP_ENVIRONMENT *IspEnvironment, unsigned char XonXoff)
+{
+    if(tcgetattr(IspEnvironment->fdCom, &IspEnvironment->newtio))
+    {
+       DebugPrintf(1, "Could not get serial port behaviour\n");
+       exit(3);
+    }
+
+    if(XonXoff)
+    {
+      IspEnvironment->newtio.c_iflag |= IXON;
+      IspEnvironment->newtio.c_iflag |= IXOFF;
+    }
+    else
+    {
+      IspEnvironment->newtio.c_iflag &= ~IXON;
+      IspEnvironment->newtio.c_iflag &= ~IXOFF;
+    }
+
+    if(tcsetattr(IspEnvironment->fdCom, TCSANOW, &IspEnvironment->newtio))
+    {
+       DebugPrintf(1, "Could not set serial port behaviour\n");
+       exit(3);
+    }
+}
+#endif // defined COMPILE_FOR_LINUX
 
 /***************************** SendComPortBlock *************************/
 /**  Sends a block of bytes out the opened com port.
@@ -631,9 +748,8 @@ void SendComPortBlock(ISP_ENVIRONMENT *IspEnvironment, const void *s, size_t n)
 
     if (IspEnvironment->WriteDelay == 1)
     {
-	    usleep(100*1000); // 100 ms delay after each block (makes lpc21isp to work with bad UARTs)
+        Sleep(100); // 100 ms delay after each block (makes lpc21isp to work with bad UARTs)
     }
-
 }
 
 /***************************** SendComPort ******************************/
@@ -660,7 +776,6 @@ static void SerialTimeoutTick(ISP_ENVIRONMENT *IspEnvironment)
         IspEnvironment->serial_timeout_count--;
     }
 }
-
 
 /***************************** ReceiveComPortBlock **********************/
 /**  Receives a buffer from the open com port. Returns all the characters
@@ -706,10 +821,34 @@ static void ReceiveComPortBlock(ISP_ENVIRONMENT *IspEnvironment,
 
 #endif // defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 
-#if defined COMPILE_FOR_LINUX || defined COMPILE_FOR_LPC21
+#if defined COMPILE_FOR_LPC21
 
     *real_size = read(IspEnvironment->fdCom, answer, max_size);
 
+#endif // defined COMPILE_FOR_LPC21
+
+#if defined COMPILE_FOR_LINUX
+    {
+        fd_set
+            readSet;
+        struct timeval
+            timeVal;
+
+        FD_ZERO(&readSet);                             // clear the set
+        FD_SET(IspEnvironment->fdCom,&readSet);        // add this descriptor to the set
+        timeVal.tv_sec=0;                              // set up the timeout waiting for one to come ready (500ms)
+        timeVal.tv_usec=500*1000;
+        if(select(FD_SETSIZE,&readSet,NULL,NULL,&timeVal)==1)    // wait up to 500 ms or until our data is ready
+        {
+            *real_size=read(IspEnvironment->fdCom, answer, max_size);
+        }
+        else
+        {
+            // timed out, show no characters received and timer expired
+            *real_size=0;
+            IspEnvironment->serial_timeout_count=0;
+        }
+    }
 #endif // defined COMPILE_FOR_LINUX
 
     sprintf(tmp_string, "Read(Length=%ld): ", (*real_size));
@@ -741,7 +880,11 @@ static void SerialTimeoutSet(ISP_ENVIRONMENT *IspEnvironment, unsigned timeout_m
 #elif defined COMPILE_FOR_LPC21
     IspEnvironment->serial_timeout_count = timeout_milliseconds * 200;
 #else
+#ifdef _MSC_VER
+    IspEnvironment->serial_timeout_count = timeGetTime() + timeout_milliseconds;
+#else
     IspEnvironment->serial_timeout_count = timeout_milliseconds;
+#endif // _MSC_VER
 #endif
 }
 
@@ -754,10 +897,24 @@ static void SerialTimeoutSet(ISP_ENVIRONMENT *IspEnvironment, unsigned timeout_m
 */
 static int SerialTimeoutCheck(ISP_ENVIRONMENT *IspEnvironment)
 {
+#if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
+#ifdef _MSC_VER
+    if ((signed long)(IspEnvironment->serial_timeout_count - timeGetTime()) < 0)
+    {
+        return 1;
+    }
+#else
     if (IspEnvironment->serial_timeout_count == 0)
     {
         return 1;
     }
+#endif // _MSC_VER
+#else
+    if (IspEnvironment->serial_timeout_count == 0)
+    {
+        return 1;
+    }
+#endif
     return 0;
 }
 
@@ -1028,7 +1185,16 @@ void DebugPrintf(int level, const char *fmt, ...)
 /***************************** ReceiveComPort ***************************/
 /**  Receives a buffer from the open com port. Returns when the buffer is
 filled, the numer of requested linefeeds has been received or the timeout
-period has passed
+period has passed. The bootloaders may send 0x0d,0x0a,0x0a or 0x0d,0x0a as
+linefeed pattern
+2013-06-28 Torsten Lang
+Note: We *could* filter out surplus 0x0a characters like in <CR><LF><LF>
+but as we don't know how the individual bootloader behaves we don't want
+to wait for possible surplus <LF> (which would slow down the transfer).
+Thus, we just terminate after the expected number of <CR><LF> sequences
+and leave it to the command handler in lpcprog.c to filter out surplus
+<LF> characters which then occur as leading character in answers or
+echoed commands.
 \param [in] ISPEnvironment.
 \param [out] Answer buffer to hold the bytes read from the serial port.
 \param [in] MaxSize the size of buffer pointed to by Answer.
@@ -1050,42 +1216,84 @@ void ReceiveComPort(ISP_ENVIRONMENT *IspEnvironment,
     int eof = 0;
     unsigned long p;
     unsigned char *Answer;
+    unsigned char *endPtr;
     char tmp_string[32];
+    static char residual_data[128] = {'\0'};
+    int lf = 0;
 
-    Answer = (unsigned char*) Ans;
+    Answer  = (unsigned char*) Ans;
 
     SerialTimeoutSet(IspEnvironment, timeOutMilliseconds);
 
-    (*RealSize) = 0;
+    *RealSize = 0;
+    endPtr = NULL;
 
     do
     {
-        ReceiveComPortBlock(IspEnvironment, Answer + (*RealSize), MaxSize - 1 - (*RealSize), &tmp_realsize);
+        if (residual_data[0] == '\0')
+        {
+            /* Receive new data */
+            ReceiveComPortBlock(IspEnvironment, Answer + (*RealSize), MaxSize - (*RealSize), &tmp_realsize);
+        }
+        else
+        {
+            /* Take over any old residual data */
+            strcpy((char *)Answer, residual_data);
+            tmp_realsize = strlen((char *)Answer);
+            residual_data[0] = '\0';
+        }
 
         if (tmp_realsize != 0)
         {
             for (p = (*RealSize); p < (*RealSize) + tmp_realsize; p++)
             {
+                /* Torsten Lang 2013-05-06 Scan for 0x0d,0x0a,0x0a and 0x0d,0x0a as linefeed pattern */
                 if (Answer[p] == 0x0a)
                 {
-                    nr_of_0x0A++;
+                    if (lf != 0)
+                    {
+                        nr_of_0x0A++;
+                        lf = 0;
+                        if (nr_of_0x0A >= WantedNr0x0A)
+                        {
+                            endPtr = &Answer[p+1];
+                        }
+                    }
                 }
                 else if (Answer[p] == 0x0d)
                 {
                     nr_of_0x0D++;
+                    lf = 1;
                 }
                 else if (((signed char) Answer[p]) < 0)
                 {
                     eof = 1;
+                    lf  = 0;
+                }
+                else if (lf != 0)
+                {
+                    nr_of_0x0D++;
+                    nr_of_0x0A++;
+                    lf = 0;
+                    if (nr_of_0x0A >= WantedNr0x0A)
+                    {
+                        endPtr = &Answer[p+1];
+                    }
                 }
             }
+            (*RealSize) += tmp_realsize;
         }
+    } while (((*RealSize) < MaxSize) && (SerialTimeoutCheck(IspEnvironment) == 0) && (nr_of_0x0A < WantedNr0x0A) && !eof);
 
-        (*RealSize) += tmp_realsize;
-
-    } while (((*RealSize) < MaxSize) && (SerialTimeoutCheck(IspEnvironment) == 0) && (nr_of_0x0A < WantedNr0x0A) && (nr_of_0x0D < WantedNr0x0A) && !eof);
-
-    Answer[(*RealSize)] = 0;
+    /* Torsten Lang 2013-05-06 Store residual data and cut answer after expected nr. of 0x0a */
+    Answer[*RealSize] = '\0';
+    if (endPtr != NULL)
+    {
+        strcpy(residual_data, (char *)endPtr);
+        *endPtr = '\0';
+        /* Torsten Lang 2013-06-28 Update size info */
+        *RealSize = endPtr-Answer;
+    }
 
     sprintf(tmp_string, "Answer(Length=%ld): ", (*RealSize));
     DumpString(3, Answer, (*RealSize), tmp_string);
@@ -1195,12 +1403,37 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                 continue;
             }
 
-            if (stricmp(argv[i], "-DoNotStart") == 0)
+            if (stricmp(argv[i], "-boothold") == 0)
+            {
+                IspEnvironment->BootHold = 1;
+                DebugPrintf(3, "hold EnableBootLoader asserted throughout programming sequence.\n");
+                continue;
+            }
+
+            if (stricmp(argv[i], "-donotstart") == 0)
             {
                 IspEnvironment->DoNotStart = 1;
                 DebugPrintf(3, "Do NOT start MCU after programming.\n");
                 continue;
             }
+
+            if(strnicmp(argv[i],"-try", 4) == 0)
+            {
+                int
+                    retry;
+                retry=atoi(&argv[i][4]);
+                if(retry>0)
+                {
+                    IspEnvironment->nQuestionMarks=retry;
+                    DebugPrintf(3, "Retry count: %d.\n", IspEnvironment->nQuestionMarks);
+                }
+                else
+                {
+                    fprintf(stderr,"invalid argument for -try: \"%s\"\n",argv[i]);
+                }
+                continue;
+            }
+
 
             if (stricmp(argv[i], "-control") == 0)
             {
@@ -1230,7 +1463,7 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                 continue;
             }
 
-	    if (stricmp(argv[i], "-writedelay") == 0)
+            if (stricmp(argv[i], "-writedelay") == 0)
             {
                 IspEnvironment->WriteDelay = 1;
                 DebugPrintf(3, "Write delay enabled.\n");
@@ -1315,9 +1548,9 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
     {
         DebugPrintf(2, "\n"
                        "Portable command line ISP\n"
-                       "for NXP LPC1000 / LPC2000 family and Analog Devices ADUC 70xx\n"
+                       "for NXP LPC family and Analog Devices ADUC 70xx\n"
                        "Version " VERSION_STR " compiled for " COMPILED_FOR ": " __DATE__ ", " __TIME__ "\n"
-                       "Copyright (c) by Martin Maurer, 2003-2011, Email: Martin.Maurer@clibb.de\n"
+                       "Copyright (c) by Martin Maurer, 2003-2013, Email: Martin.Maurer@clibb.de\n"
                        "Portions Copyright (c) by Aeolus Development 2004, www.aeolusdevelopment.com\n"
                        "\n");
 
@@ -1337,6 +1570,7 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "         -wipe        Erase entire device before upload\n"
                        "         -control     for controlling RS232 lines for easier booting\n"
                        "                      (Reset = DTR, EnableBootLoader = RTS)\n"
+                       "         -boothold    hold EnableBootLoader asserted throughout sequence\n"
 #ifdef INTEGRATED_IN_WIN_APP
                        "         -nosync      Do not synchronize device via '?'\n"
 #endif
@@ -1351,7 +1585,7 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "         -writedelay  Add delay after serial port writes (for compatibility)\n"
                        "         -ADARM       for downloading to an Analog Devices\n"
                        "                      ARM microcontroller ADUC70xx\n"
-                       "         -NXPARM      for downloading to a NXP LPC1xxx/LPC2xxx (default)\n");
+                       "         -NXPARM      for downloading to a chip of NXP LPC family (default)\n");
 
         exit(1);
     }
@@ -1431,20 +1665,20 @@ void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
   switch (mode)
   {
     case PROGRAM_MODE :
-      write(gpio_isp, "0\n", 2);	// Assert -ISP
+      write(gpio_isp, "0\n", 2);  // Assert -ISP
       Sleep(100);
-      write(gpio_rst, "0\n", 2);	// Assert -RST
+      write(gpio_rst, "0\n", 2);  // Assert -RST
       Sleep(500);
-      write(gpio_rst, "1\n", 2);	// Deassert -RST
+      write(gpio_rst, "1\n", 2);  // Deassert -RST
       Sleep(100);
-      write(gpio_isp, "1\n", 2);	// Deassert -ISP
+      write(gpio_isp, "1\n", 2);  // Deassert -ISP
       Sleep(100);
       break;;
 
     case RUN_MODE :
-      write(gpio_rst, "0\n", 2);	// Assert -RST
+      write(gpio_rst, "0\n", 2);  // Assert -RST
       Sleep(500);
-      write(gpio_rst, "1\n", 2);	// Deassert -ISP
+      write(gpio_rst, "1\n", 2);  // Deassert -ISP
       Sleep(100);
       break;;
   }
@@ -1470,7 +1704,10 @@ void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
             Sleep(500);
             // Clear the RTS line after having reset the micro
             // Needed for the "GO <Address> <Mode>" ISP command to work */
-            ControlModemLines(IspEnvironment, 0, 0);
+            if(!IspEnvironment->BootHold)
+            {
+                ControlModemLines(IspEnvironment, 0, 0);
+            }
             break;
 
         /* Reset and start uploaded program                     */
@@ -1785,8 +2022,8 @@ void ReadHexFile(ISP_ENVIRONMENT *IspEnvironment)
 /***************************** LoadFile *********************************/
 /**  Loads the requested file to download into memory.
 \param [in] IspEnvironment  structure containing input filename
-\param [in] filename	the name of the file to read in.
-\param [in] FileFormat	the format of the file to read in (FORMAT_HEX or FORMAT_BINARY)
+\param [in] filename  the name of the file to read in.
+\param [in] FileFormat  the format of the file to read in (FORMAT_HEX or FORMAT_BINARY)
 \return 0 if successful, otherwise an error code.
 */
 static int LoadFile(ISP_ENVIRONMENT *IspEnvironment, const char *filename, int FileFormat)
@@ -2044,7 +2281,7 @@ static int LoadFile(ISP_ENVIRONMENT *IspEnvironment, const char *filename, int F
             close(fdout);
         }
 
-        free( FileContent);		// Done with file contents
+        free( FileContent);   // Done with file contents
     }
     else // FORMAT_BINARY
     {
@@ -2072,10 +2309,10 @@ static int LoadFiles1(ISP_ENVIRONMENT *IspEnvironment, const FILE_LIST *file)
         DebugPrintf( 3, "Follow file list %s\n", file->name);
 
         ret_val = LoadFiles1( IspEnvironment, file->prev);
-		if( ret_val != 0)
-		{
-			return ret_val;
-		}
+    if( ret_val != 0)
+    {
+      return ret_val;
+    }
     }
 
     DebugPrintf( 3, "Attempt to read File %s\n", file->name);
@@ -2085,11 +2322,11 @@ static int LoadFiles1(ISP_ENVIRONMENT *IspEnvironment, const FILE_LIST *file)
     }
     else
     {
-		ret_val = LoadFile(IspEnvironment, file->name, FORMAT_BINARY);
+    ret_val = LoadFile(IspEnvironment, file->name, FORMAT_BINARY);
     }
     if( ret_val != 0)
     {
-		return ret_val;
+    return ret_val;
     }
 
     return 0;
@@ -2103,15 +2340,15 @@ static int LoadFiles1(ISP_ENVIRONMENT *IspEnvironment, const FILE_LIST *file)
 */
 static int LoadFiles(ISP_ENVIRONMENT *IspEnvironment)
 {
-	int ret_val;
+  int ret_val;
 
     ret_val = LoadFiles1(IspEnvironment, IspEnvironment->f_list);
     if( ret_val != 0)
     {
-		exit(1); // return ret_val;
+    exit(1); // return ret_val;
     }
 
-	DebugPrintf( 2, "Image size : %ld\n", IspEnvironment->BinaryLength);
+  DebugPrintf( 2, "Image size : %ld\n", IspEnvironment->BinaryLength);
 
     // check length to flash for correct alignment, can happen with broken ld-scripts
     if (IspEnvironment->BinaryLength % 4 != 0)
@@ -2123,11 +2360,11 @@ static int LoadFiles(ISP_ENVIRONMENT *IspEnvironment)
         IspEnvironment->BinaryLength = NewBinaryLength;
     }
 
-	// When debugging is switched on, output result of conversion to file debugout.bin
+  // When debugging is switched on, output result of conversion to file debugout.bin
     if(debug_level >= 4)
     {
          int fdout;
-		 DebugPrintf( 1, "Dumping image file.\n");
+     DebugPrintf( 1, "Dumping image file.\n");
          fdout = open("debugout.bin", O_RDWR | O_BINARY | O_CREAT | O_TRUNC, 0777);
          write(fdout, IspEnvironment->BinaryContent, IspEnvironment->BinaryLength);
          close(fdout);
@@ -2229,6 +2466,7 @@ int main(int argc, char *argv[])
     IspEnvironment.ProgramChip = TRUE;                        // Default to Programming the chip
     IspEnvironment.nQuestionMarks = 100;
     IspEnvironment.DoNotStart = 0;
+    IspEnvironment.BootHold = 0;
     ReadArguments(&IspEnvironment, argc, argv);               // Read and parse the command line
 
     return PerformActions(&IspEnvironment);                   // Do as requested !
@@ -2269,27 +2507,3 @@ void DumpString(int level, const void *b, size_t size, const char *prefix_string
     DebugPrintf(level, "'\n");
 }
 
-#if !defined COMPILE_FOR_LPC21
-int lpctest(char* FileName)
-{
-    ISP_ENVIRONMENT IspEnvironment;
-
-    // Initialize debug level
-    debug_level = 2;
-
-    // Initialize ISP Environment
-    memset(&IspEnvironment, 0, sizeof(IspEnvironment));        // Clear the IspEnviroment to a known value
-    IspEnvironment.micro        = NXP_ARM;                     // Default Micro
-    IspEnvironment.FileFormat   = FORMAT_HEX;                  // Default File Format
-    IspEnvironment.ProgramChip  = TRUE;                        // Default to Programming the chip
-    // IspEnvironment.input_file   = FileName;
-    IspEnvironment.ControlLines = TRUE;
-    IspEnvironment.serial_port  = "COM2";
-    IspEnvironment.baud_rate    = "19200";
-    IspEnvironment.nQuestionMarks = 100;
-    IspEnvironment.DoNotStart = 0;
-    strcpy(IspEnvironment.StringOscillator, "25000");
-
-    return PerformActions(&IspEnvironment);                    // Do as requested !
-}
-#endif
