@@ -3,3 +3,5 @@ obj/
 *.depend
 *.layout
 *.*~
+*.o
+lpc21isp
