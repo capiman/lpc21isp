@@ -134,6 +134,11 @@ static LPC_DEVICE_TYPE LPCtypes[] =
    { 0x00008121, 0x00000000, 0, "812M101FD20",                    16,   4, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
    { 0x00008122, 0x00000000, 0, "812M101FDH20",                   16,   4, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
 
+   { 0x00008241, 0x00000000, 0, "824M201JHI33",                   32,   8, 32, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008221, 0x00000000, 0, "822M101JHI33",                   16,   4, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008242, 0x00000000, 0, "824M201JDH20",                   32,   8, 32, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008222, 0x00000000, 0, "822M101JDH20",                   16,   4, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+
    { 0x2500102B, 0x00000000, 0, "1102",                           32,   8,  8, 4096, SectorTable_11xx, CHIP_VARIANT_LPC11XX },
 
    { 0x0A07102B, 0x00000000, 0, "1110.../002",                     4,   1,  1, 1024, SectorTable_11xx, CHIP_VARIANT_LPC11XX },
