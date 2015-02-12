@@ -1434,6 +1434,38 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                 continue;
             }
 
+#if defined SYSFS_GPIO_SUPPORT
+             if(strnicmp(argv[i],"-gpiorst", 8) == 0)
+             {
+                int rst;
+                rst=atoi(&argv[i][8]);
+                if(rst>0)
+                {
+                    IspEnvironment->GpioRst=rst;
+                    DebugPrintf(3, "GPIO RST: %d.\n", rst);
+                }
+                else
+                {
+                    fprintf(stderr,"invalid argument for -gpiorst: \"%s\"\n",argv[i]);
+                }
+                continue;
+            }
+            if(strnicmp(argv[i],"-gpioisp", 8) == 0)
+            {
+                int isp;
+                isp=atoi(&argv[i][8]);
+                if(isp>0)
+                {
+                    IspEnvironment->GpioIsp=isp;
+                    DebugPrintf(3, "GPIO ISP: %d.\n", isp);
+                }
+                else
+                {
+                    fprintf(stderr,"invalid argument for -gpioisp: \"%s\"\n",argv[i]);
+                }
+                continue;
+            }
+#endif
 
             if (stricmp(argv[i], "-control") == 0)
             {
@@ -1570,6 +1602,10 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "         -wipe        Erase entire device before upload\n"
                        "         -control     for controlling RS232 lines for easier booting\n"
                        "                      (Reset = DTR, EnableBootLoader = RTS)\n"
+#if defined SYSFS_GPIO_SUPPORT
+                       "         -gpiorst<n>  for controlling RST pin (Reset) with GPIO\n"
+                       "         -gpioisp<n>  for controlling ISP pin (EnableBootLoader) with GPIO\n"
+#endif
                        "         -boothold    hold EnableBootLoader asserted throughout sequence\n"
 #ifdef INTEGRATED_IN_WIN_APP
                        "         -nosync      Do not synchronize device via '?'\n"
@@ -1590,6 +1626,15 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
         exit(1);
     }
 
+#if defined SYSFS_GPIO_SUPPORT
+    if ( (IspEnvironment->GpioRst > 0 && ! IspEnvironment->GpioIsp) ||
+         (!IspEnvironment->GpioRst && IspEnvironment->GpioIsp > 0) )
+    {
+         DebugPrintf(1, "You must set both RST and ISP pins with -gpiorst<n> and -gpioisp<n>\n");
+         exit(1);
+    }
+#endif
+
     if (IspEnvironment->micro == NXP_ARM)
     {
         // If StringOscillator is bigger than 100 MHz, there seems to be something wrong
@@ -1608,12 +1653,14 @@ run mode.
 */
 void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
 {
-#if defined(__linux__) && defined(GPIO_RST) && defined(GPIO_ISP)
+#if defined(__linux__) && ( defined(SYSFS_GPIO_SUPPORT) || ( defined(GPIO_RST) && defined(GPIO_ISP) ) )
 
 // This code section allows using Linux GPIO pins to control the -RST and -ISP
 // signals of the target microcontroller.
 //
-// Build lpc21isp to use Linux GPIO like this:
+// You can set RST and ISP pins with -gpiorst<n> and -gpioisp<n> command line arguments
+//
+// Alternatively you may also build lpc21isp to use Linux GPIO like this:
 //
 // make CFLAGS="-Wall -DGPIO_ISP=23 -DGPIO_RST=18"
 //
@@ -1637,16 +1684,32 @@ void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
 // Then if the user is a member of the gpio group, lpc21isp will not requre any
 // special permissions to access the GPIO signals.
 
+#if defined(SYSFS_GPIO_SUPPORT)
+  if (!IspEnvironment->ControlLines && (IspEnvironment->GpioIsp == 0 || IspEnvironment->GpioRst == 0))
+  {
+    return;
+  }
+#endif
+
   char gpio_isp_filename[256];
   char gpio_rst_filename[256];
   int gpio_isp;
   int gpio_rst;
 
   memset(gpio_isp_filename, 0, sizeof(gpio_isp_filename));
+
+#if defined(SYSFS_GPIO_SUPPORT)
+  sprintf(gpio_isp_filename, "/sys/class/gpio/gpio%d/value", IspEnvironment->GpioIsp);
+#else
   sprintf(gpio_isp_filename, "/sys/class/gpio/gpio%d/value", GPIO_ISP);
+#endif
 
   memset(gpio_rst_filename, 0, sizeof(gpio_rst_filename));
+#if defined(SYSFS_GPIO_SUPPORT)
+  sprintf(gpio_rst_filename, "/sys/class/gpio/gpio%d/value", IspEnvironment->GpioRst);
+#else
   sprintf(gpio_rst_filename, "/sys/class/gpio/gpio%d/value", GPIO_RST);
+#endif
 
   gpio_isp = open(gpio_isp_filename, O_WRONLY);
   if (gpio_isp < 0)
