@@ -64,6 +64,10 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 #define TERMINAL_SUPPORT
 #endif
 
+#if defined(__linux__) && !defined(GPIO_RST) && !defined(GPIO_ISP)
+#define SYSFS_GPIO_SUPPORT
+#endif
+
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 #include <windows.h>
 #include <io.h>
@@ -182,6 +186,11 @@ typedef struct
 #ifdef TERMINAL_SUPPORT
     unsigned char TerminalAfterUpload;
     unsigned char LocalEcho;
+#endif
+
+#if defined SYSFS_GPIO_SUPPORT
+    unsigned char GpioRst;
+    unsigned char GpioIsp;
 #endif
 
     unsigned char HalfDuplex;           // Only used for LPC Programming
