@@ -13,7 +13,7 @@ endif
 
 CFLAGS		+= -Wall
 
-ifneq ($(findstring Darwin,$(OSTYPE)),)
+ifneq ($(findstring darwin,$(OSTYPE)),)
 CFLAGS+=-D__APPLE__
 else
 CFLAGS		+= -static
