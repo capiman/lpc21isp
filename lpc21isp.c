@@ -1653,6 +1653,41 @@ run mode.
 */
 void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
 {
+    if (IspEnvironment->ControlLines)
+    {
+        switch (mode)
+        {
+        /* Reset and jump to boot loader.                       */
+        case PROGRAM_MODE:
+            ControlModemLines(IspEnvironment, 1, 1);
+            Sleep(100);
+            ClearSerialPortBuffers(IspEnvironment);
+            Sleep(100);
+            ControlModemLines(IspEnvironment, 0, 1);
+            //Longer delay is the Reset signal is conected to an external rest controller
+            Sleep(500);
+            // Clear the RTS line after having reset the micro
+            // Needed for the "GO <Address> <Mode>" ISP command to work */
+            if(!IspEnvironment->BootHold)
+            {
+                ControlModemLines(IspEnvironment, 0, 0);
+            }
+            break;
+
+        /* Reset and start uploaded program                     */
+        case RUN_MODE:
+            ControlModemLines(IspEnvironment, 1, 0);
+            Sleep(100);
+            ClearSerialPortBuffers(IspEnvironment);
+            Sleep(100);
+            ControlModemLines(IspEnvironment, 0, 0);
+            Sleep(100);
+            break;
+        }
+
+	return;
+    }
+
 #if defined(__linux__) && ( defined(SYSFS_GPIO_SUPPORT) || ( defined(GPIO_RST) && defined(GPIO_ISP) ) )
 
 // This code section allows using Linux GPIO pins to control the -RST and -ISP
@@ -1685,7 +1720,7 @@ void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
 // special permissions to access the GPIO signals.
 
 #if defined(SYSFS_GPIO_SUPPORT)
-  if (!IspEnvironment->ControlLines && (IspEnvironment->GpioIsp == 0 || IspEnvironment->GpioRst == 0))
+  if (IspEnvironment->GpioIsp == 0 || IspEnvironment->GpioRst == 0)
   {
     return;
   }
@@ -1748,42 +1783,7 @@ void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
 
   close(gpio_isp);
   close(gpio_rst);
-
-  return;
 #endif
-
-    if (IspEnvironment->ControlLines)
-    {
-        switch (mode)
-        {
-        /* Reset and jump to boot loader.                       */
-        case PROGRAM_MODE:
-            ControlModemLines(IspEnvironment, 1, 1);
-            Sleep(100);
-            ClearSerialPortBuffers(IspEnvironment);
-            Sleep(100);
-            ControlModemLines(IspEnvironment, 0, 1);
-            //Longer delay is the Reset signal is conected to an external rest controller
-            Sleep(500);
-            // Clear the RTS line after having reset the micro
-            // Needed for the "GO <Address> <Mode>" ISP command to work */
-            if(!IspEnvironment->BootHold)
-            {
-                ControlModemLines(IspEnvironment, 0, 0);
-            }
-            break;
-
-        /* Reset and start uploaded program                     */
-        case RUN_MODE:
-            ControlModemLines(IspEnvironment, 1, 0);
-            Sleep(100);
-            ClearSerialPortBuffers(IspEnvironment);
-            Sleep(100);
-            ControlModemLines(IspEnvironment, 0, 0);
-            Sleep(100);
-            break;
-        }
-    }
 }
 
 
