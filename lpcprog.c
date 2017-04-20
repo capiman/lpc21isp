@@ -43,6 +43,64 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 #ifdef LPC_SUPPORT
 #include "lpcprog.h"
 
+/*
+ * Reset an ARM Cortex-M core using the AIRCR system reset request bit in the
+ * SCB. This code is then downloaded into RAM and executed after programming.
+ *
+ * See ARMv6-M Architecture Reference Manual (f.eks. DDI0419C, sections B1.5.16
+ * and B3.2.6).
+ *
+ * #include <stdint.h>
+ * #include <core_cm0.h>
+ *
+ * static volatile uint32_t *scb = (volatile uint32_t *)0xe000ed00;
+ * static const uint32_t AIRCR_VECTKEY = 0x05fa0000;
+ * static const uint32_t AIRCR_SYSRESETREQ = 0x00000004;
+ *
+ * void doreset(void) __attribute__((naked));
+ * void doreset(void)
+ * {
+ *   __DSB();
+ *   scb[3] = AIRCR_VECTKEY | AIRCR_SYSRESETREQ;
+ *   __DSB();
+ *   while(1)
+ *     ;
+ * }
+ *
+ * Compile    : $ arm-none-eabi-gcc -Wall -O2 -mthumb -mcpu=cortex-m0 -std=c99 -c -o doreset.o doreset.c
+ * Dump code  : $ arm-none-eabi-objdump -d doreset.o
+ * Binary code: $ arm-none-eabi-objcopy -O binary doreset.o doreset.bin
+ * Checksum   : $ s=0 && for i in $(hexdump -e '/1 "0x%02x" "\n"' doreset.bin); do s=$(($s+$i)); done && echo $s
+ * Uuencode   : $ uuencode doreset.bin doreset.bin | head -2 | tail -1
+ * Bytecount  : $ wc -c doreset.bin | cut -d' ' -f1
+ *
+ * Note: Above uuencode command assumes there are less than 45 bytes in the
+ *       code. Change head and tail counts accordingly when more lines are
+ *       to be sent.
+ *
+ * .text segment code dump:
+ * 00000000 <doreset>:
+ *    0:  f3bf 8f4f  dsb    sy
+ *    4:  4a02       ldr    r2, [pc, #8]   ; (10 <doreset+0x10>)
+ *    6:  4b03       ldr    r3, [pc, #12]  ; (14 <doreset+0x14>)
+ *    8:  60da       str    r2, [r3, #12]
+ *    a:  f3bf 8f4f  dsb    sy
+ *    e:  e7fe       b.n    e <doreset+0xe>
+ *   10:  05fa0004   .word  0x05fa0004
+ *   14:  e000ed00   .word  0xe000ed00
+ *
+ * As little-endian bytes in an array:
+ * static const unsigned char reset_code_m0_le[] = {
+ *   0xbf, 0xf3, 0x4f, 0x8f, 0x02, 0x4a, 0x03, 0x4b,
+ *   0xda, 0x60, 0xbf, 0xf3, 0x4f, 0x8f, 0xfe, 0xe7,
+ *   0x04, 0x00, 0xfa, 0x05, 0x00, 0xed, 0x00, 0xe0
+ * };
+ */
+
+static const char reset_code_m0_le_uu[] = "8O_-/CP)*`TO:8+_S3X_^YP0`^@4`[0#@";
+static const unsigned reset_code_m0_le_length = 24;
+static const unsigned reset_code_m0_le_checksum = 2985;
+
 static const unsigned int SectorTable_210x[] =
 {
     8192, 8192, 8192, 8192, 8192, 8192, 8192, 8192,
@@ -1592,7 +1650,45 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
         }
     }
 
-    if(IspEnvironment->DoNotStart == 0)
+    if (IspEnvironment->DoReset)
+    {
+        const long ramaddr = 0x10000200;
+
+        DebugPrintf(2, "Resetting the core...\n");
+
+        /* Download reset code to ram-start + 0x200 */
+        sprintf(tmpString, "W %ld %u\r\n", ramaddr, reset_code_m0_le_length);
+        if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
+        {
+            DebugPrintf(1, "Wrong answer on Write-Command on reset code download\n");
+            return (WRONG_ANSWER_WRIT + GetAndReportErrorNumber(Answer));
+        }
+
+        /* Send reset code */
+        sprintf(tmpString, "%s\r\n", reset_code_m0_le_uu);
+        SendComPort(IspEnvironment, tmpString);
+        ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 1, 5000);
+
+        sprintf(tmpString, "%u\r\n", reset_code_m0_le_checksum);
+        SendComPort(IspEnvironment, tmpString);
+        ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 2,5000);
+        sprintf(tmpString, "%u\nOK\n", reset_code_m0_le_checksum);
+        FormatCommand(tmpString, tmpString);
+        FormatCommand(Answer, Answer);
+        if (strcmp(Answer, tmpString) != 0)
+        {
+            DebugPrintf(1, "Error on writing reset code CRC\n");
+            return (ERROR_WRITE_CRC);
+        }
+
+        sprintf(tmpString, "G %ld T\r\n", ramaddr);
+        SendComPort(IspEnvironment, tmpString);
+        /*
+         * We probably never see what happens next... The chip is reset and
+         * anything may happen. Therefore, we just quit assuming all went well.
+         */
+    }
+    else if (IspEnvironment->DoNotStart == 0)
     {
         DebugPrintf(2, "Now launching the brand new code\n");
         fflush(stdout);
