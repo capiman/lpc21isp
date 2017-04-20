@@ -1417,6 +1417,13 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                 continue;
             }
 
+            if (stricmp(argv[i], "-reset") == 0)
+            {
+                IspEnvironment->DoReset = 1;
+                DebugPrintf(3, "Reset the MCU core after programming.\n");
+                continue;
+            }
+
             if(strnicmp(argv[i],"-try", 4) == 0)
             {
                 int
@@ -1598,6 +1605,7 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "         -debug3      for progress info only\n"
                        "         -debug5      for full debug\n"
                        "         -donotstart  do not start MCU after download\n"
+                       "         -reset       reset the MCU after download\n"
                        "         -try<n>      try n times to synchronise\n"
                        "         -wipe        Erase entire device before upload\n"
                        "         -control     for controlling RS232 lines for easier booting\n"
