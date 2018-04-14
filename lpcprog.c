@@ -117,6 +117,12 @@ static const unsigned int SectorTable_43xx[] =
 static const unsigned int SectorTable_8xx[] =
 {
      1024,  1024,  1024,  1024,  1024,  1024,  1024,  1024,
+     1024,  1024,  1024,  1024,  1024,  1024,  1024,  1024,
+     1024,  1024,  1024,  1024,  1024,  1024,  1024,  1024,
+     1024,  1024,  1024,  1024,  1024,  1024,  1024,  1024,
+     1024,  1024,  1024,  1024,  1024,  1024,  1024,  1024,
+     1024,  1024,  1024,  1024,  1024,  1024,  1024,  1024,
+     1024,  1024,  1024,  1024,  1024,  1024,  1024,  1024,
      1024,  1024,  1024,  1024,  1024,  1024,  1024,  1024
 };
 
@@ -128,6 +134,16 @@ static LPC_DEVICE_TYPE LPCtypes[] =
 
    // id,        id2,  use id2, name of product,          flash size, ram size, total number of sector, max copy size, sector table, chip variant
 
+   { 0x00008021, 0x00000000, 0, "802M001JDH20",                   16,   2, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
+   { 0x00008022, 0x00000000, 0, "802M011JDH20",                   16,   2, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
+   { 0x00008023, 0x00000000, 0, "802M001JDH16",                   16,   2, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
+   { 0x00008024, 0x00000000, 0, "802M001JHI33",                   16,   2, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
+
+   { 0x00008041, 0x00000000, 0, "804M101JDH20",                   32,   4, 32, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
+   { 0x00008042, 0x00000000, 0, "804M101JDH24",                   32,   4, 32, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
+   { 0x00008043, 0x00000000, 0, "804M111JDH24",                   32,   4, 32, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
+   { 0x00008044, 0x00000000, 0, "804M101JHI33",                   32,   4, 32, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
+
    { 0x00008100, 0x00000000, 0, "810M021FN8",                      4,   1,  4,  256, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
    { 0x00008110, 0x00000000, 0, "811M001FDH16",                    8,   2,  8, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
    { 0x00008120, 0x00000000, 0, "812M101FDH16",                   16,   4, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX  },
@@ -138,6 +154,18 @@ static LPC_DEVICE_TYPE LPCtypes[] =
    { 0x00008221, 0x00000000, 0, "822M101JHI33",                   16,   4, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
    { 0x00008242, 0x00000000, 0, "824M201JDH20",                   32,   8, 32, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
    { 0x00008222, 0x00000000, 0, "822M101JDH20",                   16,   4, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+
+   { 0x00008322, 0x00000000, 0, "832M101FDH20",                   16,   4, 16, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008341, 0x00000000, 0, "8341201FHI33",                   32,   4, 32, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+
+   { 0x00008442, 0x00000000, 0, "844M201JBD48",                   64,   8, 64, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008441, 0x00000000, 0, "844M201JBD64",                   64,   8, 64, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008444, 0x00000000, 0, "844M201JHI33",                   64,   8, 64, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008443, 0x00000000, 0, "844M201JHI48",                   64,   8, 64, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008452, 0x00000000, 0, "845M301JBD48",                   64,  16, 64, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008451, 0x00000000, 0, "845M301JBD64",                   64,  16, 64, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008454, 0x00000000, 0, "845M301JHI33",                   64,  16, 64, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
+   { 0x00008453, 0x00000000, 0, "845M301JHI48",                   64,  16, 64, 1024, SectorTable_8xx,  CHIP_VARIANT_LPC8XX },
 
    { 0x2500102B, 0x00000000, 0, "1102",                           32,   8,  8, 4096, SectorTable_11xx, CHIP_VARIANT_LPC11XX },
 
