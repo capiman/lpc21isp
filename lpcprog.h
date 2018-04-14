@@ -63,6 +63,8 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 
 #define LPC_RAMSTART_LPC8XX     0x10000000L
 #define LPC_RAMBASE_LPC8XX      0x10000270L
+#define LPC_RAMBASE_LPC80X      0x100003A8L
+#define LPC_RAMBASE_LPC84X      0x10000600L
 
 /* Return values used by NxpDownload(): reserving all values from 0x1000 to 0x1FFF */
 

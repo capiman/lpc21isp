@@ -1743,7 +1743,21 @@ unsigned long ReturnValueLpcRamBase(ISP_ENVIRONMENT *IspEnvironment)
   }
   else if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC8XX)
   {
-    return LPC_RAMBASE_LPC8XX;
+    if ((LPCtypes[IspEnvironment->DetectedDevice].id & 0xffffff00) == 0x00008000)
+    {
+      // LPC80x device
+      return LPC_RAMBASE_LPC80X;
+    }
+    else if ((LPCtypes[IspEnvironment->DetectedDevice].id & 0xffffff00) == 0x00008400)
+    {
+      // LPC84x device
+      return LPC_RAMBASE_LPC84X;
+    }
+    else
+    {
+      // other LPC8xx device
+      return LPC_RAMBASE_LPC8XX;
+    }
   }
   DebugPrintf(1, "Error in ReturnValueLpcRamBase (%d)\n", LPCtypes[IspEnvironment->DetectedDevice].ChipVariant);
   exit(1);
