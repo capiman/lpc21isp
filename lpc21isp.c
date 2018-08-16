@@ -829,25 +829,30 @@ static void ReceiveComPortBlock(ISP_ENVIRONMENT *IspEnvironment,
 
 #if defined COMPILE_FOR_LINUX
     {
-        fd_set
-            readSet;
-        struct timeval
-            timeVal;
+        fd_set readSet;
+        struct timeval timeVal;
+        int ret;
 
-        FD_ZERO(&readSet);                             // clear the set
-        FD_SET(IspEnvironment->fdCom,&readSet);        // add this descriptor to the set
-        timeVal.tv_sec=0;                              // set up the timeout waiting for one to come ready (500ms)
-        timeVal.tv_usec=500*1000;
-        if(select(FD_SETSIZE,&readSet,NULL,NULL,&timeVal)==1)    // wait up to 500 ms or until our data is ready
+	// wait up to 500 ms or until our data is ready
+        FD_ZERO(&readSet);
+        FD_SET(IspEnvironment->fdCom, &readSet);
+        timeVal.tv_sec = 0;
+        timeVal.tv_usec = 500 * 1000;
+        ret = select(IspEnvironment->fdCom + 1, &readSet, NULL, NULL, &timeVal);
+        if (ret == -1)
         {
-            *real_size=read(IspEnvironment->fdCom, answer, max_size);
+            sprintf(tmp_string, "Select error: %d", errno);
+            DumpString(5, 0, 0, tmp_string);
+            *real_size = 0;
         }
+        else if (ret == 0)
+	{
+            *real_size = 0;
+	}
         else
-        {
-            // timed out, show no characters received and timer expired
-            *real_size=0;
-            IspEnvironment->serial_timeout_count=0;
-        }
+	{
+            *real_size = read(IspEnvironment->fdCom, answer, max_size);
+	}
     }
 #endif // defined COMPILE_FOR_LINUX
 
