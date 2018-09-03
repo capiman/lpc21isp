@@ -3,7 +3,7 @@ cmake_minimum_required( VERSION 2.8.5 )
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_SOURCE_DIR}/cmake")
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Relase)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
 project(lpc21isp LANGUAGES C)
@@ -28,6 +28,11 @@ add_executable(${PROJECT_NAME}
   lpcterm.c lpcterm.h
 )
 
+if (CMAKE_C_COMPILER_ID MATCHES "MSVC")
+  target_link_libraries(${PROJECT_NAME} winmm.lib)
+endif()
+
+#install
 include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
 
