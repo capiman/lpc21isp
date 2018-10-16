@@ -1,5 +1,24 @@
 language: c
+
+os: 
+  - linux
+  - osx
+
 compiler:
   - gcc
-# Change this to your needs
-script: make
+  - clang
+
+env:
+  - BUILD_TYPE=Debug
+  - BUILD_TYPE=Release
+  - BUILD_TYPE=MinSizeRel
+
+before_script:
+  - cd ${TRAVIS_BUILD_DIR}
+  - mkdir build && cd build
+  - cmake -DCMAKE_VERBOSE_MAKEFILE=FALSE -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+          -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/build/dist 
+          ..
+
+script:
+  - cmake --build . --config ${BUILD_TYPE} --target install
