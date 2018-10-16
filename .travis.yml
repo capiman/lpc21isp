@@ -13,16 +13,10 @@ env:
   - BUILD_TYPE=Release
   - BUILD_TYPE=MinSizeRel
 
-addons:
-    apt:
-        packages:
-            - cmake
-            - ninja-build
-
 before_script:
   - cd ${TRAVIS_BUILD_DIR}
   - mkdir build && cd build
-  - cmake -GNinja -DCMAKE_VERBOSE_MAKEFILE=FALSE -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+  - cmake -DCMAKE_VERBOSE_MAKEFILE=FALSE -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
           -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/build/dist 
           ..
 
