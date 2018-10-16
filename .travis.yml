@@ -1,51 +1,30 @@
 language: c
 
-matrix:
-    include:
-        - env: test="x64 4.8.4 (CMake gcc)"
-          os: linux
-          dist: trusty
-          compiler: gcc
-          before_script:
-              - mkdir gcc_rel && cd gcc_rel
-              - cmake ..
-          script:  make
+os: 
+  - linux
+  - osx
 
-        - env: test="x64 (CMake clang)"
-          os: linux
-          dist: trusty
-          compiler: clang
-          before_script:
-              - mkdir clang_rel && cd clang_rel
-              - cmake ..
-          script:  make
+compiler:
+  - gcc
+  - clang
 
-        - env: test="x64 (CMake clang - Ninja) Debug"
-          os: linux
-          dist: trusty
-          compiler: clang
-          before_script:
-              - mkdir clang_ninja_dbg && cd clang_ninja_dbg
-              - cmake .. -GNinja -DCMAKE_BUILD_TYPE=Debug
-          script:  ninja
-
-        - env: test="x64 (CMake clang - Ninja) Install / Uninstall"
-          os: linux
-          dist: trusty
-          compiler: clang
-          before_script:
-              - mkdir clang_ninja && cd clang_ninja
-              - cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=./out
-          script:
-              - ninja install
-              - ninja uninstall
+env:
+  - BUILD_TYPE=Debug
+  - BUILD_TYPE=Release
+  - BUILD_TYPE=MinSizeRel
 
 addons:
-
     apt:
         packages:
-            - gcc-6
             - cmake
             - ninja-build
-        sources:
-            - ubuntu-toolchain-r-test
+
+before_script:
+  - cd ${TRAVIS_BUILD_DIR}
+  - mkdir build && cd build
+  - cmake -GNinja -DCMAKE_VERBOSE_MAKEFILE=FALSE -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+          -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/build/dist 
+          ..
+
+script:
+  - cmake --build . --config ${BUILD_TYPE} --target install
