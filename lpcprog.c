@@ -1278,11 +1278,27 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
                             if ( (IspEnvironment->BinaryOffset <  ReturnValueLpcRamStart(IspEnvironment))
                                ||(IspEnvironment->BinaryOffset >= ReturnValueLpcRamStart(IspEnvironment)+(LPCtypes[IspEnvironment->DetectedDevice].RAMSize*1024)))
                             { // Flash: use full memory
-                                c = IspEnvironment->BinaryContent[Pos + Block * 45 + BlockOffset];
+                                if ((Pos + Block * 45 + BlockOffset) < IspEnvironment->BinaryLength)
+                                {
+                                    c = IspEnvironment->BinaryContent[Pos + Block * 45 + BlockOffset];
+                                }
+                                else
+                                {
+                                    // Padding with FF
+                                    c = 0xFF;
+                                }
                             }
                             else
                             { // RAM: Skip first 0x200 bytes, these are used by the download program in LPC21xx
-                                c = IspEnvironment->BinaryContent[Pos + Block * 45 + BlockOffset + 0x200];
+                                if ((Pos + Block * 45 + BlockOffset + 0x200) < IspEnvironment->BinaryLength)
+                                {
+                                    c = IspEnvironment->BinaryContent[Pos + Block * 45 + BlockOffset + 0x200];
+                                }
+                                else
+                                {
+                                    // Padding with zero
+                                    c = 0;
+                                }
                             }
 
                             block_CRC += c;
