@@ -415,7 +415,7 @@ Change-History:
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.97"
+#define VERSION_STR "1.98"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex
@@ -1584,6 +1584,7 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "Version " VERSION_STR " compiled for " COMPILED_FOR ": " __DATE__ ", " __TIME__ "\n"
                        "Copyright (c) by Martin Maurer, 2003-2013, Email: Martin.Maurer@clibb.de\n"
                        "Portions Copyright (c) by Aeolus Development 2004, www.aeolusdevelopment.com\n"
+                       "Improvements by Craig McQueen, https://github.com/cmcqueen/lpc21isp\n"
                        "\n");
 
         DebugPrintf(1, "Syntax:  lpc21isp [Options] file[ file[ ...]] comport baudrate Oscillator_in_kHz\n\n"
