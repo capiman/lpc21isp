@@ -704,7 +704,7 @@ void SendComPortBlock(ISP_ENVIRONMENT *IspEnvironment, const void *s, size_t n)
     char * rxpch;
 #endif // defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 
-    DumpString(4, s, n, "Sending ");
+    DumpString(3, s, n, "Sending ");
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 

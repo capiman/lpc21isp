@@ -1285,6 +1285,7 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
                                 else
                                 {
                                     // Padding with FF
+                                    DebugPrintf(2, "Padding with FF at 0x%08X\n", Pos + Block * 45 + BlockOffset + IspEnvironment->BinaryOffset);
                                     c = 0xFF;
                                 }
                             }
