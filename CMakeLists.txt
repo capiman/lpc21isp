@@ -7,7 +7,7 @@ project (lpc21isp
 set (def)
 
 # Only enable GPIO support if we are compiling for raspberry pi
-if (${TOOLCHAIN_PREFIX} MATCHES "^*arm-bcm2708*")
+if (${TOOLCHAIN_PATH} MATCHES "^[a-zA-z0-0\/]*arm-bcm2708")
   list (APPEND def GPIO_SUPPORT)
 endif ()
 
