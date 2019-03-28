@@ -64,7 +64,7 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 #define TERMINAL_SUPPORT
 #endif
 
-#if defined(__linux__) && !defined(GPIO_RST) && !defined(GPIO_ISP)
+#if defined(GPIO_SUPPORT) && defined(__linux__) && !defined(GPIO_RST) && !defined(GPIO_ISP)
 #define SYSFS_GPIO_SUPPORT
 #endif
 

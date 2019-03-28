@@ -2365,7 +2365,7 @@ static int LoadFile(ISP_ENVIRONMENT *IspEnvironment, const char *filename, int F
 */
 static int LoadFiles1(ISP_ENVIRONMENT *IspEnvironment, const FILE_LIST *file)
 {
-    int ret_val;
+    int ret_val = 0;
 
     if( file->prev != 0)
     {
@@ -2440,6 +2440,7 @@ static int LoadFiles(ISP_ENVIRONMENT *IspEnvironment)
 int PerformActions(ISP_ENVIRONMENT *IspEnvironment)
 {
     int downloadResult = -1;
+    int downloadCount = 0;
 
     DebugPrintf(2, "lpc21isp version " VERSION_STR "\n");
 
@@ -2462,8 +2463,10 @@ int PerformActions(ISP_ENVIRONMENT *IspEnvironment)
         {
 #ifdef LPC_SUPPORT
         case NXP_ARM:
+        while (downloadResult != 0 && ++downloadCount < 5) {
             downloadResult = NxpDownload(IspEnvironment);
-            break;
+        }
+        break;
 #endif
 
 #ifdef AD_SUPPORT
