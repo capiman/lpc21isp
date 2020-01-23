@@ -1039,6 +1039,8 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
         Sector = 1;
     }
 
+    FlashBankSectorStart = SectorStart;
+
     if (IspEnvironment->WipeDevice == 1)
     {
         DebugPrintf(2, "Wiping Device. ");
@@ -1161,33 +1163,31 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
             return (PROGRAM_TOO_LARGE);
         }
 
-        FlashBankSectorStart = SectorStart;
-
-        // Check if the last sector (sector 0) of data is being written
-        if ( Sector == 0 )
-        {
-            FlashBank = FLASH_BANK_A;
-            IspEnvironment->BinaryOffset = LPC_FLASHABASE_LPC43XX;
-        }
-        // Detect when a new flash bank starts
-        else if (Sector == LPCtypes[IspEnvironment->DetectedDevice].FlashSectors[FLASH_BANK_A])
-        {
-            DebugPrintf(1, "Starting to write to sectors in Flash Bank B.\n");
-            FlashBank = FLASH_BANK_B;
-            FlashBankSectorStart = 0;
-
-            // Set the binary offset for cortex m4
-            if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
-                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
-            {
-                IspEnvironment->BinaryOffset = LPC_FLASHBBASE_LPC43XX;
-            }
-        }
-
         // Check if the chip could have multiple flash banks
         if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
             LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
         {
+            // Check if the last sector (sector 0) of data is being written
+            if ( Sector == 0 )
+            {
+                FlashBank = FLASH_BANK_A;
+                IspEnvironment->BinaryOffset = LPC_FLASHABASE_LPC43XX;
+            }
+            // Detect when a new flash bank starts
+            else if (Sector == LPCtypes[IspEnvironment->DetectedDevice].FlashSectors[FLASH_BANK_A])
+            {
+                DebugPrintf(1, "Starting to write to sectors in Flash Bank B.\n");
+                FlashBank = FLASH_BANK_B;
+                FlashBankSectorStart = 0;
+
+                // Set the binary offset for cortex m4
+                if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
+                    LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
+                {
+                    IspEnvironment->BinaryOffset = LPC_FLASHBBASE_LPC43XX;
+                }
+            }
+
             FlashBankSector = Sector % LPCtypes[IspEnvironment->DetectedDevice].FlashSectors[FLASH_BANK_A];
             DebugPrintf(2, "Sector %ld (Flash bank: %c, Sector #%ld): ", Sector, FlashBank == FLASH_BANK_A ? 'A' : 'B', FlashBankSector);
         }
@@ -1657,6 +1657,7 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
         {
             Sector = 0;
             SectorStart = 0;
+            FlashBankSectorStart = 0;
         }
         // Check if all sectors have been written
         else if (Sector == 0)
@@ -1667,6 +1668,7 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
         else
         {
             SectorStart += LPCtypes[IspEnvironment->DetectedDevice].SectorTable[FlashBankSector];
+            FlashBankSectorStart += LPCtypes[IspEnvironment->DetectedDevice].SectorTable[FlashBankSector];
             Sector++;
         }
     }
