@@ -128,11 +128,11 @@ typedef struct
     const unsigned long  id2;
     const unsigned int   EvalId2;
     const char *Product;
-    const unsigned int   FlashSize;     /* in kiB, for informational purposes only */
-    const unsigned int   RAMSize;       /* in kiB, for informational purposes only */
-          unsigned int   FlashSectors;  /* total number of sectors */
-          unsigned int   MaxCopySize;   /* maximum size that can be copied to Flash in a single command */
-    const unsigned int  *SectorTable;   /* pointer to a sector table with constant the sector sizes */
+    const unsigned int   FlashSize;       /* in kiB, for informational purposes only */
+    const unsigned int   RAMSize;         /* in kiB, for informational purposes only */
+          unsigned int   FlashSectors[2]; /* total number of sectors {index = flash bank}*/
+          unsigned int   MaxCopySize;     /* maximum size that can be copied to Flash in a single command */
+    const unsigned int  *SectorTable;     /* pointer to a sector table with constant the sector sizes */
     const CHIP_VARIANT   ChipVariant;
 } LPC_DEVICE_TYPE;
 
