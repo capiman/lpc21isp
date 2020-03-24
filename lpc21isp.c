@@ -1691,6 +1691,10 @@ void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
   }
 #endif
 
+  char gpio_low[] = {"0\n"};
+  char gpio_high[] = {"1\n"};
+  char *gpio_assert = gpio_low;
+  char *gpio_deassert = gpio_high;
   char gpio_isp_filename[256];
   char gpio_rst_filename[256];
   int gpio_isp;
@@ -1725,23 +1729,30 @@ void ResetTarget(ISP_ENVIRONMENT *IspEnvironment, TARGET_MODE mode)
     exit(1);
   }
 
+  //handle assertion logic levels on the control lines
+  if (IspEnvironment->ControlLinesInverted)
+  {
+    gpio_assert = gpio_high;
+    gpio_deassert = gpio_low;
+  }
+
   switch (mode)
   {
     case PROGRAM_MODE :
-      write(gpio_isp, "0\n", 2);  // Assert -ISP
+      write(gpio_isp, gpio_assert, 2);  // Assert -ISP
       Sleep(100);
-      write(gpio_rst, "0\n", 2);  // Assert -RST
+      write(gpio_rst, gpio_assert, 2);  // Assert -RST
       Sleep(500);
-      write(gpio_rst, "1\n", 2);  // Deassert -RST
+      write(gpio_rst, gpio_deassert, 2);  // Deassert -RST
       Sleep(100);
-      write(gpio_isp, "1\n", 2);  // Deassert -ISP
+      write(gpio_isp, gpio_deassert, 2);  // Deassert -ISP
       Sleep(100);
       break;;
 
     case RUN_MODE :
-      write(gpio_rst, "0\n", 2);  // Assert -RST
+      write(gpio_rst, gpio_assert, 2);  // Assert -RST
       Sleep(500);
-      write(gpio_rst, "1\n", 2);  // Deassert -ISP
+      write(gpio_rst, gpio_deassert, 2);  // Deassert -ISP
       Sleep(100);
       break;;
   }
