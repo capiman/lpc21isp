@@ -415,7 +415,7 @@ Change-History:
 // Please don't use TABs in the source code !!!
 
 // Don't forget to update the version string that is on the next line
-#define VERSION_STR "1.97"
+#define VERSION_STR "1.99"
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 static char RxTmpBuf[256];        // save received data to this buffer for half-duplex
@@ -704,7 +704,7 @@ void SendComPortBlock(ISP_ENVIRONMENT *IspEnvironment, const void *s, size_t n)
     char * rxpch;
 #endif // defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 
-    DumpString(4, s, n, "Sending ");
+    DumpString(3, s, n, "Sending ");
 
 #if defined COMPILE_FOR_WINDOWS || defined COMPILE_FOR_CYGWIN
 
@@ -1184,7 +1184,7 @@ void DebugPrintf(int level, const char *fmt, ...)
 
 /***************************** ReceiveComPort ***************************/
 /**  Receives a buffer from the open com port. Returns when the buffer is
-filled, the numer of requested linefeeds has been received or the timeout
+filled, the number of requested linefeeds has been received or the timeout
 period has passed. The bootloaders may send 0x0d,0x0a,0x0a or 0x0d,0x0a as
 linefeed pattern
 2013-06-28 Torsten Lang
@@ -1198,7 +1198,7 @@ echoed commands.
 \param [in] ISPEnvironment.
 \param [out] Answer buffer to hold the bytes read from the serial port.
 \param [in] MaxSize the size of buffer pointed to by Answer.
-\param [out] RealSize pointer to a long that returns the amout of the
+\param [out] RealSize pointer to a long that returns the amount of the
 buffer that is actually used.
 \param [in] WantedNr0x0A the maximum number of linefeeds to accept before
 returning.
@@ -1285,7 +1285,7 @@ void ReceiveComPort(ISP_ENVIRONMENT *IspEnvironment,
         }
     } while (((*RealSize) < MaxSize) && (SerialTimeoutCheck(IspEnvironment) == 0) && (nr_of_0x0A < WantedNr0x0A) && !eof);
 
-    /* Torsten Lang 2013-05-06 Store residual data and cut answer after expected nr. of 0x0a */
+    /* Torsten Lang 2013-05-06 Store residual data and cut answer after expected number of 0x0a */
     Answer[*RealSize] = '\0';
     if (endPtr != NULL)
     {
@@ -1584,6 +1584,7 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "Version " VERSION_STR " compiled for " COMPILED_FOR ": " __DATE__ ", " __TIME__ "\n"
                        "Copyright (c) by Martin Maurer, 2003-2013, Email: Martin.Maurer@clibb.de\n"
                        "Portions Copyright (c) by Aeolus Development 2004, www.aeolusdevelopment.com\n"
+                       "Improvements by Craig McQueen, https://github.com/cmcqueen/lpc21isp\n"
                        "\n");
 
         DebugPrintf(1, "Syntax:  lpc21isp [Options] file[ file[ ...]] comport baudrate Oscillator_in_kHz\n\n"
