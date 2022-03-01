@@ -278,16 +278,16 @@ static LPC_DEVICE_TYPE LPCtypes[] =
    { 0x281D3F47, 0x00000000, 0, "1788",                          512,       96,             { 30,  0 },         4096,      SectorTable_17xx, CHIP_VARIANT_LPC17XX },
 
    // LPC18xx
-   { 0xF00B1B3F, 0x00000000, 1, "1810",                            0,       32,             {  0,  0 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX }, // Flashless
-   { 0xF001D830, 0x00000000, 1, "1812",                          512,       32,             { 15,  0 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
-   { 0xF001D830, 0x00000000, 1, "1813",                          512,       32,             { 11, 11 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
-   { 0xF001D830, 0x00000000, 1, "1815",                          768,       32,             { 13, 13 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
-   { 0xF001D830, 0x00000000, 1, "1817",                         1024,       32,             { 15, 15 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
-   { 0xF00A9B3C, 0x00000000, 1, "1820",                            0,       32,             {  0,  0 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX }, // Flashless
-   { 0xF001D830, 0x00000000, 1, "1822",                          512,       32,             { 15,  0 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
-   { 0xF001D830, 0x00000000, 1, "1823",                          512,       32,             { 11, 11 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
-   { 0xF001D830, 0x00000000, 1, "1825",                          768,       32,             { 13, 13 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
-   { 0xF001D830, 0x00000000, 1, "1827",                         1024,       32,             { 15, 15 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
+   { 0xF00B5B3F, 0x00000000, 1, "1810",                            0,       32,             {  0,  0 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX }, // Flashless
+   { 0xF00BDB3F, 0x00000080, 1, "1812",                          512,       32,             { 15,  0 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
+   { 0xF00BDB3F, 0x00000044, 1, "1813",                          512,       32,             { 11, 11 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
+   { 0xF001DB3F, 0x00000022, 1, "1815",                          768,       32,             { 13, 13 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
+   { 0xF001DB3F, 0x00000000, 1, "1817",                         1024,       32,             { 15, 15 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
+   { 0xF00ADB3C, 0x00000000, 1, "1820",                            0,       32,             {  0,  0 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX }, // Flashless
+   { 0xF00BDB3C, 0x00000080, 1, "1822",                          512,       32,             { 15,  0 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
+   { 0xF00BDB3C, 0x00000044, 1, "1823",                          512,       32,             { 11, 11 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
+   { 0xF00BDB3C, 0x00000022, 1, "1825",                          768,       32,             { 13, 13 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
+   { 0xF00BDB3C, 0x00000000, 1, "1827",                         1024,       32,             { 15, 15 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
    { 0xF0009A30, 0x00000000, 1, "1830",                            0,       32,             {  0,  0 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX }, // Flashless
    { 0xF001DA30, 0x00000044, 1, "1833",                          512,       32,             { 11, 11 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
    { 0xF001DA30, 0x00000000, 1, "1837",                         1024,       32,             { 15, 15 },         8192,      SectorTable_18xx, CHIP_VARIANT_LPC18XX },
