@@ -196,6 +196,7 @@ typedef struct
     unsigned char HalfDuplex;           // Only used for LPC Programming
     unsigned char WriteDelay;
     unsigned char DetectOnly;
+    unsigned char ForceISPMode;
     unsigned char WipeDevice;
     unsigned char Verify;
     int           DetectedDevice;       /* index in LPCtypes[] array */

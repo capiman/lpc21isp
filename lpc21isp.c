@@ -1392,6 +1392,14 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                 continue;
             }
 
+            if (stricmp(argv[i], "-forceisp") == 0)
+            {
+                IspEnvironment->ForceISPMode  = 1;
+                IspEnvironment->ProgramChip = 0;
+                DebugPrintf(3, "Force ISP mode on next reboot.\n");
+                continue;
+            }
+
             if(strnicmp(argv[i],"-debug", 6) == 0)
             {
                 char* num;
@@ -1594,6 +1602,7 @@ static void ReadArguments(ISP_ENVIRONMENT *IspEnvironment, unsigned int argc, ch
                        "         -termonly    for starting terminal without an upload\n"
                        "         -localecho   for local echo in terminal\n"
                        "         -detectonly  detect only used LPC chiptype (NXPARM only)\n"
+                       "         -forceisp    erases sector 0 to force ISP mode on reboot (NXPARM only)\n"
                        "         -debug0      for no debug\n"
                        "         -debug3      for progress info only\n"
                        "         -debug5      for full debug\n"
@@ -2456,7 +2465,7 @@ int PerformActions(ISP_ENVIRONMENT *IspEnvironment)
     ClearSerialPortBuffers(IspEnvironment);
 
     /* Perform the requested download.                              */
-    if (IspEnvironment->ProgramChip || IspEnvironment->DetectOnly)
+    if (IspEnvironment->ProgramChip || IspEnvironment->DetectOnly || IspEnvironment->ForceISPMode)
     {
         switch (IspEnvironment->micro)
         {
@@ -2480,7 +2489,7 @@ int PerformActions(ISP_ENVIRONMENT *IspEnvironment)
         }
     }
 
-    if (IspEnvironment->StartAddress == 0 || IspEnvironment->TerminalOnly)
+    if (IspEnvironment->StartAddress == 0 || IspEnvironment->TerminalOnly || IspEnvironment->ForceISPMode )
     {
         /* Only reset target if startaddress = 0
         * Otherwise stay with the running program as started in Download()
