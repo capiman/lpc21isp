@@ -863,7 +863,7 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
         DebugPrintf(2, " (0x%08lX)\n", Id[0]);
     }
 
-    if (!IspEnvironment->DetectOnly)
+    if (!IspEnvironment->DetectOnly && !IspEnvironment->ForceISPMode)
     {
         // Build up uuencode table
         uuencode_table[0] = 0x60;           // 0x20 is translated to 0x60 !
@@ -997,68 +997,10 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
       ControlXonXoffSerialPort(IspEnvironment, 0);
     }
 
-    // Start with sector 1 and go upward... Sector 0 containing the interrupt vectors
-    // will be loaded last, since it contains a checksum and device will re-enter
-    // bootloader mode as long as this checksum is invalid.
-    DebugPrintf(2, "Will start programming at Sector 1 if possible, and conclude with Sector 0 to ensure that checksum is written last.\n");
-    if (LPCtypes[IspEnvironment->DetectedDevice].SectorTable[0] >= IspEnvironment->BinaryLength)
+    if (IspEnvironment->ForceISPMode)
     {
-        Sector = 0;
-        SectorStart = 0;
-    }
-    else
-    {
-        SectorStart = LPCtypes[IspEnvironment->DetectedDevice].SectorTable[0];
-        Sector = 1;
-    }
-
-    if (IspEnvironment->WipeDevice == 1)
-    {
-        DebugPrintf(2, "Wiping Device. ");
-
-        if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
-            LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
-        {
-            // TODO: Quick and dirty hack to address bank 0
-            sprintf(tmpString, "P %d %d 0\r\n", 0, LPCtypes[IspEnvironment->DetectedDevice].FlashSectors-1);
-        }
-        else
-        {
-            sprintf(tmpString, "P %d %d\r\n", 0, LPCtypes[IspEnvironment->DetectedDevice].FlashSectors-1);
-        }
-
-        if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
-        {
-            DebugPrintf(1, "Wrong answer on Prepare-Command\n");
-            return (WRONG_ANSWER_PREP + GetAndReportErrorNumber(Answer));
-        }
-
-        if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
-            LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
-        {
-            // TODO: Quick and dirty hack to address bank 0
-            sprintf(tmpString, "E %d %d 0\r\n", 0, LPCtypes[IspEnvironment->DetectedDevice].FlashSectors-1);
-        }
-        else
-        {
-            sprintf(tmpString, "E %d %d\r\n", 0, LPCtypes[IspEnvironment->DetectedDevice].FlashSectors-1);
-        }
-        if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
-        {
-            DebugPrintf(1, "Wrong answer on Erase-Command\n");
-            return (WRONG_ANSWER_ERAS + GetAndReportErrorNumber(Answer));
-        }
-        DebugPrintf(2, "OK \n");
-
-        if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
-            LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
-        {
-          DebugPrintf(2, "ATTENTION: Only bank A was wiped!!!\n");
-        }
-    }
-    else{
         //no wiping requested: erasing sector 0 first
-        DebugPrintf(2, "Erasing sector 0 first, to invalidate checksum. ");
+        DebugPrintf(2, "Erasing sector 0 first, to force ISP mode on reboot. ");
 
         if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
             LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
@@ -1093,380 +1035,122 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
             DebugPrintf(1, "Wrong answer on Erase-Command\n");
             return (WRONG_ANSWER_ERAS + GetAndReportErrorNumber(Answer));
         }
-        DebugPrintf(2, "OK \n");
+        DebugPrintf(2, "OK \n");        
     }
-    while (1)
+    else
     {
-        if (Sector >= LPCtypes[IspEnvironment->DetectedDevice].FlashSectors)
+        // Start with sector 1 and go upward... Sector 0 containing the interrupt vectors
+        // will be loaded last, since it contains a checksum and device will re-enter
+        // bootloader mode as long as this checksum is invalid.
+        DebugPrintf(2, "Will start programming at Sector 1 if possible, and conclude with Sector 0 to ensure that checksum is written last.\n");
+        if (LPCtypes[IspEnvironment->DetectedDevice].SectorTable[0] >= IspEnvironment->BinaryLength)
         {
-            DebugPrintf(1, "Program too large; running out of Flash sectors.\n");
-            return (PROGRAM_TOO_LARGE);
+            Sector = 0;
+            SectorStart = 0;
+        }
+        else
+        {
+            SectorStart = LPCtypes[IspEnvironment->DetectedDevice].SectorTable[0];
+            Sector = 1;
         }
 
-        DebugPrintf(2, "Sector %ld: ", Sector);
-        fflush(stdout);
-
-        if ( (IspEnvironment->BinaryOffset <  ReturnValueLpcRamStart(IspEnvironment))  // Skip Erase when running from RAM
-           ||(IspEnvironment->BinaryOffset >= ReturnValueLpcRamStart(IspEnvironment)+(LPCtypes[IspEnvironment->DetectedDevice].RAMSize*1024)))
+        if (IspEnvironment->WipeDevice == 1)
         {
+            DebugPrintf(2, "Wiping Device. ");
+
             if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
                 LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
             {
                 // TODO: Quick and dirty hack to address bank 0
-                sprintf(tmpString, "P %ld %ld 0\r\n", Sector, Sector);
+                sprintf(tmpString, "P %d %d 0\r\n", 0, LPCtypes[IspEnvironment->DetectedDevice].FlashSectors-1);
             }
             else
             {
-                sprintf(tmpString, "P %ld %ld\r\n", Sector, Sector);
+                sprintf(tmpString, "P %d %d\r\n", 0, LPCtypes[IspEnvironment->DetectedDevice].FlashSectors-1);
             }
 
             if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
             {
-                DebugPrintf(1, "Wrong answer on Prepare-Command (1) (Sector %ld)\n", Sector);
+                DebugPrintf(1, "Wrong answer on Prepare-Command\n");
                 return (WRONG_ANSWER_PREP + GetAndReportErrorNumber(Answer));
             }
 
-            DebugPrintf(2, ".");
-            fflush(stdout);
-            if (IspEnvironment->WipeDevice == 0 && (Sector!=0)) //Sector 0 already erased
+            if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
             {
-                if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
-                    LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
-                {
-                    // TODO: Quick and dirty hack to address bank 0
-                    sprintf(tmpString, "E %ld %ld 0\r\n", Sector, Sector);
-                }
-                else
-                {
-                    sprintf(tmpString, "E %ld %ld\r\n", Sector, Sector);
-                }
+                // TODO: Quick and dirty hack to address bank 0
+                sprintf(tmpString, "E %d %d 0\r\n", 0, LPCtypes[IspEnvironment->DetectedDevice].FlashSectors-1);
+            }
+            else
+            {
+                sprintf(tmpString, "E %d %d\r\n", 0, LPCtypes[IspEnvironment->DetectedDevice].FlashSectors-1);
+            }
+            if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
+            {
+                DebugPrintf(1, "Wrong answer on Erase-Command\n");
+                return (WRONG_ANSWER_ERAS + GetAndReportErrorNumber(Answer));
+            }
+            DebugPrintf(2, "OK \n");
 
-                if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
-                {
-                    DebugPrintf(1, "Wrong answer on Erase-Command (Sector %ld)\n", Sector);
-                    return (WRONG_ANSWER_ERAS + GetAndReportErrorNumber(Answer));
-                }
-
-                DebugPrintf(2, ".");
-                fflush(stdout);
+            if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
+            {
+            DebugPrintf(2, "ATTENTION: Only bank A was wiped!!!\n");
             }
         }
+        else{
+            //no wiping requested: erasing sector 0 first
+            DebugPrintf(2, "Erasing sector 0 first, to invalidate checksum. ");
 
-        SectorLength = LPCtypes[IspEnvironment->DetectedDevice].SectorTable[Sector];
-        if (SectorLength > IspEnvironment->BinaryLength - SectorStart)
-        {
-            SectorLength = IspEnvironment->BinaryLength - SectorStart;
-        }
-
-        for (SectorOffset = 0; SectorOffset < SectorLength; SectorOffset += SectorChunk)
-        {
-            // Check if we are to write only 0xFFs - it would be just a waste of time..
-            if (SectorOffset == 0) {
-                for (SectorOffset = 0; SectorOffset < SectorLength; ++SectorOffset)
-                {
-                    if (IspEnvironment->BinaryContent[SectorStart + SectorOffset] != 0xFF)
-                        break;
-                }
-                if (SectorOffset == SectorLength) // all data contents were 0xFFs
-                {
-                    DebugPrintf(2, "Whole sector contents is 0xFFs, skipping programming.");
-                    fflush(stdout);
-                    break;
-                }
-                SectorOffset = 0; // re-set otherwise
-            }
-
-            if (SectorOffset > 0)
+            if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
             {
-                // Add a visible marker between segments in a sector
-                DebugPrintf(2, "|");  /* means: partial segment copied */
-                fflush(stdout);
+                // TODO: Quick and dirty hack to address bank 0
+                sprintf(tmpString, "P %d %d 0\r\n", 0, 0);
             }
-
-            // If the Flash ROM sector size is bigger than the number of bytes
-            // we can copy from RAM to Flash, we must "chop up" the sector and
-            // copy these individually.
-            // This is especially needed in the case where a Flash sector is
-            // bigger than the amount of SRAM.
-            SectorChunk = SectorLength - SectorOffset;
-            if (SectorChunk > (unsigned)LPCtypes[IspEnvironment->DetectedDevice].MaxCopySize)
+            else
             {
-                SectorChunk = LPCtypes[IspEnvironment->DetectedDevice].MaxCopySize;
+                sprintf(tmpString, "P %d %d\r\n", 0, 0);
             }
-
-            // Write multiple of 45 * 4 Byte blocks to RAM, but copy maximum of on sector to Flash
-            // In worst case we transfer up to 180 byte too much to RAM
-            // but then we can always use full 45 byte blocks and length is multiple of 4
-            CopyLength = SectorChunk;
-
-            if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC2XXX ||
-               LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC17XX ||
-               LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC13XX ||
-               LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC11XX ||
-               LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX ||
-               LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX)
-            {
-                if ((CopyLength % (45 * 4)) != 0)
-                {
-                    CopyLength += ((45 * 4) - (CopyLength % (45 * 4)));
-                }
-            }
-
-            sprintf(tmpString, "W %ld %ld\r\n", ReturnValueLpcRamBase(IspEnvironment), CopyLength);
 
             if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
             {
-                DebugPrintf(1, "Wrong answer on Write-Command\n");
-                return (WRONG_ANSWER_WRIT + GetAndReportErrorNumber(Answer));
+                DebugPrintf(1, "Wrong answer on Prepare-Command\n");
+                return (WRONG_ANSWER_PREP + GetAndReportErrorNumber(Answer));
             }
 
-            DebugPrintf(2, ".");
+            if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
+            {
+                // TODO: Quick and dirty hack to address bank 0
+                sprintf(tmpString, "E %d %d 0\r\n", 0, 0);
+            }
+            else
+            {
+                sprintf(tmpString, "E %d %d\r\n", 0, 0);
+            }
+
+            if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
+            {
+                DebugPrintf(1, "Wrong answer on Erase-Command\n");
+                return (WRONG_ANSWER_ERAS + GetAndReportErrorNumber(Answer));
+            }
+            DebugPrintf(2, "OK \n");
+        }
+        while (1)
+        {
+            if (Sector >= LPCtypes[IspEnvironment->DetectedDevice].FlashSectors)
+            {
+                DebugPrintf(1, "Program too large; running out of Flash sectors.\n");
+                return (PROGRAM_TOO_LARGE);
+            }
+
+            DebugPrintf(2, "Sector %ld: ", Sector);
             fflush(stdout);
 
-            if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC2XXX ||
-               LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC17XX ||
-               LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC13XX ||
-               LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC11XX ||
-               LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX ||
-               LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX)
+            if ( (IspEnvironment->BinaryOffset <  ReturnValueLpcRamStart(IspEnvironment))  // Skip Erase when running from RAM
+            ||(IspEnvironment->BinaryOffset >= ReturnValueLpcRamStart(IspEnvironment)+(LPCtypes[IspEnvironment->DetectedDevice].RAMSize*1024)))
             {
-                block_CRC = 0;
-                Line = 0;
-
-                // Transfer blocks of 45 * 4 bytes to RAM
-                for (Pos = SectorStart + SectorOffset; (Pos < SectorStart + SectorOffset + CopyLength) && (Pos < IspEnvironment->BinaryLength); Pos += (45 * 4))
-                {
-                    for (Block = 0; Block < 4; Block++)  // Each block 45 bytes
-                    {
-                        DebugPrintf(2, ".");
-                        fflush(stdout);
-
-#if defined INTEGRATED_IN_WIN_APP
-                        // inform the calling application about having written another chuck of data
-                        AppWritten(45);
-#endif
-
-                        // Uuencode one 45 byte block
-                        tmpStringPos = 0;
-
-#if !defined COMPILE_FOR_LPC21
-                        sendbuf[Line][tmpStringPos++] = (char)(' ' + 45);    // Encode Length of block
-#else
-                        tmpString[tmpStringPos++] = (char)(' ' + 45);        // Encode Length of block
-#endif
-
-                        for (BlockOffset = 0; BlockOffset < 45; BlockOffset++)
-                        {
-                            if ( (IspEnvironment->BinaryOffset <  ReturnValueLpcRamStart(IspEnvironment))
-                               ||(IspEnvironment->BinaryOffset >= ReturnValueLpcRamStart(IspEnvironment)+(LPCtypes[IspEnvironment->DetectedDevice].RAMSize*1024)))
-                            { // Flash: use full memory
-                                c = IspEnvironment->BinaryContent[Pos + Block * 45 + BlockOffset];
-                            }
-                            else
-                            { // RAM: Skip first 0x200 bytes, these are used by the download program in LPC21xx
-                                c = IspEnvironment->BinaryContent[Pos + Block * 45 + BlockOffset + 0x200];
-                            }
-
-                            block_CRC += c;
-
-                            k = (k << 8) + (c & 255);
-
-                            if ((BlockOffset % 3) == 2)   // Collecting always 3 Bytes, then do processing in 4 Bytes
-                            {
-#if !defined COMPILE_FOR_LPC21
-                                sendbuf[Line][tmpStringPos++] = uuencode_table[(k >> 18) & 63];
-                                sendbuf[Line][tmpStringPos++] = uuencode_table[(k >> 12) & 63];
-                                sendbuf[Line][tmpStringPos++] = uuencode_table[(k >>  6) & 63];
-                                sendbuf[Line][tmpStringPos++] = uuencode_table[ k        & 63];
-#else
-                                tmpString[tmpStringPos++] = uuencode_table[(k >> 18) & 63];
-                                tmpString[tmpStringPos++] = uuencode_table[(k >> 12) & 63];
-                                tmpString[tmpStringPos++] = uuencode_table[(k >>  6) & 63];
-                                tmpString[tmpStringPos++] = uuencode_table[ k        & 63];
-#endif
-                            }
-                        }
-
-
-#if !defined COMPILE_FOR_LPC21
-                        sendbuf[Line][tmpStringPos++] = '\r';
-                        sendbuf[Line][tmpStringPos++] = '\n';
-                        sendbuf[Line][tmpStringPos++] = 0;
-
-                        SendComPort(IspEnvironment, sendbuf[Line]);
-                        // receive only for debug proposes
-                        ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 1, 5000);
-                        FormatCommand(sendbuf[Line], tmpString);
-                        FormatCommand(Answer, Answer);
-                        if (strncmp(Answer, tmpString, strlen(tmpString)) != 0)
-                        {
-                            DebugPrintf(1, "Error on writing data (1)\n");
-                            return (ERROR_WRITE_DATA);
-                        }
-#else
-                        tmpString[tmpStringPos++] = '\r';
-                        tmpString[tmpStringPos++] = '\n';
-                        tmpString[tmpStringPos++] = 0;
-
-                        SendComPort(IspEnvironment, tmpString);
-                        ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 1, 5000);
-                        FormatCommand(tmpString, tmpString);
-                        FormatCommand(Answer, Answer);
-                        if (strncmp(Answer, tmpString, tmpStringPos) != 0)
-                        {
-                            DebugPrintf(1, "Error on writing data (1)\n");
-                            return (ERROR_WRITE_DATA);
-                        }
-#endif
-
-                        Line++;
-
-                        DebugPrintf(3, "Line = %d\n", Line);
-
-                        if (Line == 20)
-                        {
-#if !defined COMPILE_FOR_LPC21
-                            for (repeat = 0; repeat < 3; repeat++)
-                            {
-
-                                // DebugPrintf(1, "block_CRC = %ld\n", block_CRC);
-
-                                sprintf(tmpString, "%ld\r\n", block_CRC);
-
-                                SendComPort(IspEnvironment, tmpString);
-
-                                ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 2, 5000);
-
-                                sprintf(tmpString, "%ld\nOK\n", block_CRC);
-
-                                FormatCommand(tmpString, tmpString);
-                                FormatCommand(Answer, Answer);
-                                if (strcmp(Answer, tmpString) != 0)
-                                {
-                                    for (i = 0; i < Line; i++)
-                                    {
-                                        SendComPort(IspEnvironment, sendbuf[i]);
-                                        ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 1, 5000);
-                                    }
-                                }
-                                else
-                                    break;
-                            }
-
-                            if (repeat >= 3)
-                            {
-                                DebugPrintf(1, "Error on writing block_CRC (1)\n");
-                                return (ERROR_WRITE_CRC);
-                            }
-#else
-                            // DebugPrintf(1, "block_CRC = %ld\n", block_CRC);
-                            sprintf(tmpString, "%ld\r\n", block_CRC);
-                            SendComPort(IspEnvironment, tmpString);
-
-                            ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 2,5000);
-
-                            sprintf(tmpString, "%ld\nOK\n", block_CRC);
-                            FormatCommand(tmpString, tmpString);
-                            FormatCommand(Answer, Answer);
-                            if (strcmp(Answer, tmpString) != 0)
-                            {
-                                DebugPrintf(1, "Error on writing block_CRC (2)\n");
-                                return (ERROR_WRITE_CRC);
-                            }
-#endif
-                            Line = 0;
-                            block_CRC = 0;
-                        }
-                    }
-                }
-
-                if (Line != 0)
-                {
-#if !defined COMPILE_FOR_LPC21
-                    for (repeat = 0; repeat < 3; repeat++)
-                    {
-                        sprintf(tmpString, "%ld\r\n", block_CRC);
-
-                        SendComPort(IspEnvironment, tmpString);
-
-                        ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 2,5000);
-
-                        sprintf(tmpString, "%ld\nOK\n", block_CRC);
-
-                        FormatCommand(tmpString, tmpString);
-                        FormatCommand(Answer, Answer);
-                        if (strcmp(Answer, tmpString) != 0)
-                        {
-                            for (i = 0; i < Line; i++)
-                            {
-                                SendComPort(IspEnvironment, sendbuf[i]);
-                                ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 1,5000);
-                            }
-                        }
-                        else
-                            break;
-                    }
-
-                    if (repeat >= 3)
-                    {
-                        DebugPrintf(1, "Error on writing block_CRC (3)\n");
-                        return (ERROR_WRITE_CRC2);
-                    }
-#else
-                    sprintf(tmpString, "%ld\r\n", block_CRC);
-                    SendComPort(IspEnvironment, tmpString);
-
-                    ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 2,5000);
-
-                    sprintf(tmpString, "%ld\nOK\n", block_CRC);
-                    FormatCommand(tmpString, tmpString);
-                    FormatCommand(Answer, Answer);
-                    if (strcmp(Answer, tmpString) != 0)
-                    {
-                        DebugPrintf(1, "Error on writing block_CRC (4)\n");
-                        return (ERROR_WRITE_CRC2);
-                    }
-#endif
-                }
-            }
-            else if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC8XX)
-            {
-                unsigned char BigAnswer[4096];
-                unsigned long CopyLengthPartialOffset = 0;
-                unsigned long CopyLengthPartialRemainingBytes;
-
-                while(CopyLengthPartialOffset < CopyLength)
-                {
-                    CopyLengthPartialRemainingBytes = CopyLength - CopyLengthPartialOffset;
-                    if(CopyLengthPartialRemainingBytes > 256)
-                    {
-                      // There seems to be an error in LPC812:
-                      // When too much bytes are written at high speed,
-                      // bytes get lost
-                      // Workaround: Use smaller blocks
-                      CopyLengthPartialRemainingBytes = 256;
-                    }
-
-                    SendComPortBlock(IspEnvironment, &IspEnvironment->BinaryContent[SectorStart + SectorOffset + CopyLengthPartialOffset], CopyLengthPartialRemainingBytes);
-
-                    if (ReceiveComPortBlockComplete(IspEnvironment, &BigAnswer, CopyLengthPartialRemainingBytes, 10000) != 0)
-                    {
-                        return (ERROR_WRITE_DATA);
-                    }
-
-                    if(memcmp(&IspEnvironment->BinaryContent[SectorStart + SectorOffset + CopyLengthPartialOffset], BigAnswer, CopyLengthPartialRemainingBytes))
-                    {
-                        return (ERROR_WRITE_DATA);
-                    }
-
-                    CopyLengthPartialOffset += CopyLengthPartialRemainingBytes;
-                }
-            }
-
-            if ( (IspEnvironment->BinaryOffset <  ReturnValueLpcRamStart(IspEnvironment))
-               ||(IspEnvironment->BinaryOffset >= ReturnValueLpcRamStart(IspEnvironment)+(LPCtypes[IspEnvironment->DetectedDevice].RAMSize*1024)))
-            {
-                // Prepare command must be repeated before every write
                 if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
                     LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
                 {
@@ -1480,97 +1164,456 @@ int NxpDownload(ISP_ENVIRONMENT *IspEnvironment)
 
                 if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
                 {
-                    DebugPrintf(1, "Wrong answer on Prepare-Command (2) (Sector %ld)\n", Sector);
-                    return (WRONG_ANSWER_PREP2 + GetAndReportErrorNumber(Answer));
+                    DebugPrintf(1, "Wrong answer on Prepare-Command (1) (Sector %ld)\n", Sector);
+                    return (WRONG_ANSWER_PREP + GetAndReportErrorNumber(Answer));
                 }
 
-                // Round CopyLength up to one of the following values: 512, 1024,
-                // 4096, 8192; but do not exceed the maximum copy size (usually
-                // 8192, but chip-dependent)
-                if (CopyLength < 512)
+                DebugPrintf(2, ".");
+                fflush(stdout);
+                if (IspEnvironment->WipeDevice == 0 && (Sector!=0)) //Sector 0 already erased
                 {
-                    CopyLength = 512;
-                }
-                else if (SectorLength < 1024)
-                {
-                    CopyLength = 1024;
-                }
-                else if (SectorLength < 4096)
-                {
-                    CopyLength = 4096;
-                }
-                else
-                {
-                    CopyLength = 8192;
-                }
-                if (CopyLength > (unsigned)LPCtypes[IspEnvironment->DetectedDevice].MaxCopySize)
-                {
-                    CopyLength = LPCtypes[IspEnvironment->DetectedDevice].MaxCopySize;
-                }
-
-                sprintf(tmpString, "C %ld %ld %ld\r\n", IspEnvironment->BinaryOffset + SectorStart + SectorOffset, ReturnValueLpcRamBase(IspEnvironment), CopyLength);
-
-                if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
-                {
-                    DebugPrintf(1, "Wrong answer on Copy-Command\n");
-                    return (WRONG_ANSWER_COPY + GetAndReportErrorNumber(Answer));
-                }
-
-                if (IspEnvironment->Verify)
-                {
-
-                    //Avoid compare first 64 bytes.
-                    //Because first 64 bytes are re-mapped to flash boot sector,
-                    //and the compare result may not be correct.
-                    if (SectorStart + SectorOffset<64)
+                    if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
+                        LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
                     {
-                        sprintf(tmpString, "M %d %ld %ld\r\n", 64, ReturnValueLpcRamBase(IspEnvironment) + (64 - SectorStart - SectorOffset), CopyLength-(64 - SectorStart - SectorOffset));
+                        // TODO: Quick and dirty hack to address bank 0
+                        sprintf(tmpString, "E %ld %ld 0\r\n", Sector, Sector);
                     }
                     else
                     {
-                        sprintf(tmpString, "M %ld %ld %ld\r\n", SectorStart + SectorOffset, ReturnValueLpcRamBase(IspEnvironment), CopyLength);
+                        sprintf(tmpString, "E %ld %ld\r\n", Sector, Sector);
                     }
 
                     if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
                     {
-                        DebugPrintf(1, "Wrong answer on Compare-Command\n");
+                        DebugPrintf(1, "Wrong answer on Erase-Command (Sector %ld)\n", Sector);
+                        return (WRONG_ANSWER_ERAS + GetAndReportErrorNumber(Answer));
+                    }
+
+                    DebugPrintf(2, ".");
+                    fflush(stdout);
+                }
+            }
+
+            SectorLength = LPCtypes[IspEnvironment->DetectedDevice].SectorTable[Sector];
+            if (SectorLength > IspEnvironment->BinaryLength - SectorStart)
+            {
+                SectorLength = IspEnvironment->BinaryLength - SectorStart;
+            }
+
+            for (SectorOffset = 0; SectorOffset < SectorLength; SectorOffset += SectorChunk)
+            {
+                // Check if we are to write only 0xFFs - it would be just a waste of time..
+                if (SectorOffset == 0) {
+                    for (SectorOffset = 0; SectorOffset < SectorLength; ++SectorOffset)
+                    {
+                        if (IspEnvironment->BinaryContent[SectorStart + SectorOffset] != 0xFF)
+                            break;
+                    }
+                    if (SectorOffset == SectorLength) // all data contents were 0xFFs
+                    {
+                        DebugPrintf(2, "Whole sector contents is 0xFFs, skipping programming.");
+                        fflush(stdout);
+                        break;
+                    }
+                    SectorOffset = 0; // re-set otherwise
+                }
+
+                if (SectorOffset > 0)
+                {
+                    // Add a visible marker between segments in a sector
+                    DebugPrintf(2, "|");  /* means: partial segment copied */
+                    fflush(stdout);
+                }
+
+                // If the Flash ROM sector size is bigger than the number of bytes
+                // we can copy from RAM to Flash, we must "chop up" the sector and
+                // copy these individually.
+                // This is especially needed in the case where a Flash sector is
+                // bigger than the amount of SRAM.
+                SectorChunk = SectorLength - SectorOffset;
+                if (SectorChunk > (unsigned)LPCtypes[IspEnvironment->DetectedDevice].MaxCopySize)
+                {
+                    SectorChunk = LPCtypes[IspEnvironment->DetectedDevice].MaxCopySize;
+                }
+
+                // Write multiple of 45 * 4 Byte blocks to RAM, but copy maximum of on sector to Flash
+                // In worst case we transfer up to 180 byte too much to RAM
+                // but then we can always use full 45 byte blocks and length is multiple of 4
+                CopyLength = SectorChunk;
+
+                if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC2XXX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC17XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC13XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC11XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX)
+                {
+                    if ((CopyLength % (45 * 4)) != 0)
+                    {
+                        CopyLength += ((45 * 4) - (CopyLength % (45 * 4)));
+                    }
+                }
+
+                sprintf(tmpString, "W %ld %ld\r\n", ReturnValueLpcRamBase(IspEnvironment), CopyLength);
+
+                if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
+                {
+                    DebugPrintf(1, "Wrong answer on Write-Command\n");
+                    return (WRONG_ANSWER_WRIT + GetAndReportErrorNumber(Answer));
+                }
+
+                DebugPrintf(2, ".");
+                fflush(stdout);
+
+                if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC2XXX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC17XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC13XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC11XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX ||
+                LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX)
+                {
+                    block_CRC = 0;
+                    Line = 0;
+
+                    // Transfer blocks of 45 * 4 bytes to RAM
+                    for (Pos = SectorStart + SectorOffset; (Pos < SectorStart + SectorOffset + CopyLength) && (Pos < IspEnvironment->BinaryLength); Pos += (45 * 4))
+                    {
+                        for (Block = 0; Block < 4; Block++)  // Each block 45 bytes
+                        {
+                            DebugPrintf(2, ".");
+                            fflush(stdout);
+
+    #if defined INTEGRATED_IN_WIN_APP
+                            // inform the calling application about having written another chuck of data
+                            AppWritten(45);
+    #endif
+
+                            // Uuencode one 45 byte block
+                            tmpStringPos = 0;
+
+    #if !defined COMPILE_FOR_LPC21
+                            sendbuf[Line][tmpStringPos++] = (char)(' ' + 45);    // Encode Length of block
+    #else
+                            tmpString[tmpStringPos++] = (char)(' ' + 45);        // Encode Length of block
+    #endif
+
+                            for (BlockOffset = 0; BlockOffset < 45; BlockOffset++)
+                            {
+                                if ( (IspEnvironment->BinaryOffset <  ReturnValueLpcRamStart(IspEnvironment))
+                                ||(IspEnvironment->BinaryOffset >= ReturnValueLpcRamStart(IspEnvironment)+(LPCtypes[IspEnvironment->DetectedDevice].RAMSize*1024)))
+                                { // Flash: use full memory
+                                    c = IspEnvironment->BinaryContent[Pos + Block * 45 + BlockOffset];
+                                }
+                                else
+                                { // RAM: Skip first 0x200 bytes, these are used by the download program in LPC21xx
+                                    c = IspEnvironment->BinaryContent[Pos + Block * 45 + BlockOffset + 0x200];
+                                }
+
+                                block_CRC += c;
+
+                                k = (k << 8) + (c & 255);
+
+                                if ((BlockOffset % 3) == 2)   // Collecting always 3 Bytes, then do processing in 4 Bytes
+                                {
+    #if !defined COMPILE_FOR_LPC21
+                                    sendbuf[Line][tmpStringPos++] = uuencode_table[(k >> 18) & 63];
+                                    sendbuf[Line][tmpStringPos++] = uuencode_table[(k >> 12) & 63];
+                                    sendbuf[Line][tmpStringPos++] = uuencode_table[(k >>  6) & 63];
+                                    sendbuf[Line][tmpStringPos++] = uuencode_table[ k        & 63];
+    #else
+                                    tmpString[tmpStringPos++] = uuencode_table[(k >> 18) & 63];
+                                    tmpString[tmpStringPos++] = uuencode_table[(k >> 12) & 63];
+                                    tmpString[tmpStringPos++] = uuencode_table[(k >>  6) & 63];
+                                    tmpString[tmpStringPos++] = uuencode_table[ k        & 63];
+    #endif
+                                }
+                            }
+
+
+    #if !defined COMPILE_FOR_LPC21
+                            sendbuf[Line][tmpStringPos++] = '\r';
+                            sendbuf[Line][tmpStringPos++] = '\n';
+                            sendbuf[Line][tmpStringPos++] = 0;
+
+                            SendComPort(IspEnvironment, sendbuf[Line]);
+                            // receive only for debug proposes
+                            ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 1, 5000);
+                            FormatCommand(sendbuf[Line], tmpString);
+                            FormatCommand(Answer, Answer);
+                            if (strncmp(Answer, tmpString, strlen(tmpString)) != 0)
+                            {
+                                DebugPrintf(1, "Error on writing data (1)\n");
+                                return (ERROR_WRITE_DATA);
+                            }
+    #else
+                            tmpString[tmpStringPos++] = '\r';
+                            tmpString[tmpStringPos++] = '\n';
+                            tmpString[tmpStringPos++] = 0;
+
+                            SendComPort(IspEnvironment, tmpString);
+                            ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 1, 5000);
+                            FormatCommand(tmpString, tmpString);
+                            FormatCommand(Answer, Answer);
+                            if (strncmp(Answer, tmpString, tmpStringPos) != 0)
+                            {
+                                DebugPrintf(1, "Error on writing data (1)\n");
+                                return (ERROR_WRITE_DATA);
+                            }
+    #endif
+
+                            Line++;
+
+                            DebugPrintf(3, "Line = %d\n", Line);
+
+                            if (Line == 20)
+                            {
+    #if !defined COMPILE_FOR_LPC21
+                                for (repeat = 0; repeat < 3; repeat++)
+                                {
+
+                                    // DebugPrintf(1, "block_CRC = %ld\n", block_CRC);
+
+                                    sprintf(tmpString, "%ld\r\n", block_CRC);
+
+                                    SendComPort(IspEnvironment, tmpString);
+
+                                    ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 2, 5000);
+
+                                    sprintf(tmpString, "%ld\nOK\n", block_CRC);
+
+                                    FormatCommand(tmpString, tmpString);
+                                    FormatCommand(Answer, Answer);
+                                    if (strcmp(Answer, tmpString) != 0)
+                                    {
+                                        for (i = 0; i < Line; i++)
+                                        {
+                                            SendComPort(IspEnvironment, sendbuf[i]);
+                                            ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 1, 5000);
+                                        }
+                                    }
+                                    else
+                                        break;
+                                }
+
+                                if (repeat >= 3)
+                                {
+                                    DebugPrintf(1, "Error on writing block_CRC (1)\n");
+                                    return (ERROR_WRITE_CRC);
+                                }
+    #else
+                                // DebugPrintf(1, "block_CRC = %ld\n", block_CRC);
+                                sprintf(tmpString, "%ld\r\n", block_CRC);
+                                SendComPort(IspEnvironment, tmpString);
+
+                                ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 2,5000);
+
+                                sprintf(tmpString, "%ld\nOK\n", block_CRC);
+                                FormatCommand(tmpString, tmpString);
+                                FormatCommand(Answer, Answer);
+                                if (strcmp(Answer, tmpString) != 0)
+                                {
+                                    DebugPrintf(1, "Error on writing block_CRC (2)\n");
+                                    return (ERROR_WRITE_CRC);
+                                }
+    #endif
+                                Line = 0;
+                                block_CRC = 0;
+                            }
+                        }
+                    }
+
+                    if (Line != 0)
+                    {
+    #if !defined COMPILE_FOR_LPC21
+                        for (repeat = 0; repeat < 3; repeat++)
+                        {
+                            sprintf(tmpString, "%ld\r\n", block_CRC);
+
+                            SendComPort(IspEnvironment, tmpString);
+
+                            ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 2,5000);
+
+                            sprintf(tmpString, "%ld\nOK\n", block_CRC);
+
+                            FormatCommand(tmpString, tmpString);
+                            FormatCommand(Answer, Answer);
+                            if (strcmp(Answer, tmpString) != 0)
+                            {
+                                for (i = 0; i < Line; i++)
+                                {
+                                    SendComPort(IspEnvironment, sendbuf[i]);
+                                    ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 1,5000);
+                                }
+                            }
+                            else
+                                break;
+                        }
+
+                        if (repeat >= 3)
+                        {
+                            DebugPrintf(1, "Error on writing block_CRC (3)\n");
+                            return (ERROR_WRITE_CRC2);
+                        }
+    #else
+                        sprintf(tmpString, "%ld\r\n", block_CRC);
+                        SendComPort(IspEnvironment, tmpString);
+
+                        ReceiveComPort(IspEnvironment, Answer, sizeof(Answer)-1, &realsize, 2,5000);
+
+                        sprintf(tmpString, "%ld\nOK\n", block_CRC);
+                        FormatCommand(tmpString, tmpString);
+                        FormatCommand(Answer, Answer);
+                        if (strcmp(Answer, tmpString) != 0)
+                        {
+                            DebugPrintf(1, "Error on writing block_CRC (4)\n");
+                            return (ERROR_WRITE_CRC2);
+                        }
+    #endif
+                    }
+                }
+                else if(LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC8XX)
+                {
+                    unsigned char BigAnswer[4096];
+                    unsigned long CopyLengthPartialOffset = 0;
+                    unsigned long CopyLengthPartialRemainingBytes;
+
+                    while(CopyLengthPartialOffset < CopyLength)
+                    {
+                        CopyLengthPartialRemainingBytes = CopyLength - CopyLengthPartialOffset;
+                        if(CopyLengthPartialRemainingBytes > 256)
+                        {
+                        // There seems to be an error in LPC812:
+                        // When too much bytes are written at high speed,
+                        // bytes get lost
+                        // Workaround: Use smaller blocks
+                        CopyLengthPartialRemainingBytes = 256;
+                        }
+
+                        SendComPortBlock(IspEnvironment, &IspEnvironment->BinaryContent[SectorStart + SectorOffset + CopyLengthPartialOffset], CopyLengthPartialRemainingBytes);
+
+                        if (ReceiveComPortBlockComplete(IspEnvironment, &BigAnswer, CopyLengthPartialRemainingBytes, 10000) != 0)
+                        {
+                            return (ERROR_WRITE_DATA);
+                        }
+
+                        if(memcmp(&IspEnvironment->BinaryContent[SectorStart + SectorOffset + CopyLengthPartialOffset], BigAnswer, CopyLengthPartialRemainingBytes))
+                        {
+                            return (ERROR_WRITE_DATA);
+                        }
+
+                        CopyLengthPartialOffset += CopyLengthPartialRemainingBytes;
+                    }
+                }
+
+                if ( (IspEnvironment->BinaryOffset <  ReturnValueLpcRamStart(IspEnvironment))
+                ||(IspEnvironment->BinaryOffset >= ReturnValueLpcRamStart(IspEnvironment)+(LPCtypes[IspEnvironment->DetectedDevice].RAMSize*1024)))
+                {
+                    // Prepare command must be repeated before every write
+                    if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
+                        LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
+                    {
+                        // TODO: Quick and dirty hack to address bank 0
+                        sprintf(tmpString, "P %ld %ld 0\r\n", Sector, Sector);
+                    }
+                    else
+                    {
+                        sprintf(tmpString, "P %ld %ld\r\n", Sector, Sector);
+                    }
+
+                    if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
+                    {
+                        DebugPrintf(1, "Wrong answer on Prepare-Command (2) (Sector %ld)\n", Sector);
+                        return (WRONG_ANSWER_PREP2 + GetAndReportErrorNumber(Answer));
+                    }
+
+                    // Round CopyLength up to one of the following values: 512, 1024,
+                    // 4096, 8192; but do not exceed the maximum copy size (usually
+                    // 8192, but chip-dependent)
+                    if (CopyLength < 512)
+                    {
+                        CopyLength = 512;
+                    }
+                    else if (SectorLength < 1024)
+                    {
+                        CopyLength = 1024;
+                    }
+                    else if (SectorLength < 4096)
+                    {
+                        CopyLength = 4096;
+                    }
+                    else
+                    {
+                        CopyLength = 8192;
+                    }
+                    if (CopyLength > (unsigned)LPCtypes[IspEnvironment->DetectedDevice].MaxCopySize)
+                    {
+                        CopyLength = LPCtypes[IspEnvironment->DetectedDevice].MaxCopySize;
+                    }
+
+                    sprintf(tmpString, "C %ld %ld %ld\r\n", IspEnvironment->BinaryOffset + SectorStart + SectorOffset, ReturnValueLpcRamBase(IspEnvironment), CopyLength);
+
+                    if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
+                    {
+                        DebugPrintf(1, "Wrong answer on Copy-Command\n");
                         return (WRONG_ANSWER_COPY + GetAndReportErrorNumber(Answer));
+                    }
+
+                    if (IspEnvironment->Verify)
+                    {
+
+                        //Avoid compare first 64 bytes.
+                        //Because first 64 bytes are re-mapped to flash boot sector,
+                        //and the compare result may not be correct.
+                        if (SectorStart + SectorOffset<64)
+                        {
+                            sprintf(tmpString, "M %d %ld %ld\r\n", 64, ReturnValueLpcRamBase(IspEnvironment) + (64 - SectorStart - SectorOffset), CopyLength-(64 - SectorStart - SectorOffset));
+                        }
+                        else
+                        {
+                            sprintf(tmpString, "M %ld %ld %ld\r\n", SectorStart + SectorOffset, ReturnValueLpcRamBase(IspEnvironment), CopyLength);
+                        }
+
+                        if (!SendAndVerify(IspEnvironment, tmpString, Answer, sizeof Answer))
+                        {
+                            DebugPrintf(1, "Wrong answer on Compare-Command\n");
+                            return (WRONG_ANSWER_COPY + GetAndReportErrorNumber(Answer));
+                        }
                     }
                 }
             }
+
+            DebugPrintf(2, "\n");
+            fflush(stdout);
+
+            if ((SectorStart + SectorLength) >= IspEnvironment->BinaryLength && Sector!=0)
+            {
+                Sector = 0;
+                SectorStart = 0;
+            }
+            else if (Sector == 0) {
+                break;
+            }
+            else {
+                SectorStart += LPCtypes[IspEnvironment->DetectedDevice].SectorTable[Sector];
+                Sector++;
+            }
         }
 
-        DebugPrintf(2, "\n");
-        fflush(stdout);
+        tDoneUpload = time(NULL);
+        if (IspEnvironment->Verify)
+            DebugPrintf(2, "Download Finished and Verified correct... taking %d seconds\n", tDoneUpload - tStartUpload);
+        else
+            DebugPrintf(2, "Download Finished... taking %d seconds\n", tDoneUpload - tStartUpload);
 
-        if ((SectorStart + SectorLength) >= IspEnvironment->BinaryLength && Sector!=0)
+        // For LPC18xx set boot bank to 0
+        if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
+            LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
         {
-            Sector = 0;
-            SectorStart = 0;
-        }
-        else if (Sector == 0) {
-            break;
-        }
-        else {
-            SectorStart += LPCtypes[IspEnvironment->DetectedDevice].SectorTable[Sector];
-            Sector++;
-        }
-    }
-
-    tDoneUpload = time(NULL);
-    if (IspEnvironment->Verify)
-        DebugPrintf(2, "Download Finished and Verified correct... taking %d seconds\n", tDoneUpload - tStartUpload);
-    else
-        DebugPrintf(2, "Download Finished... taking %d seconds\n", tDoneUpload - tStartUpload);
-
-    // For LPC18xx set boot bank to 0
-    if (LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC43XX ||
-        LPCtypes[IspEnvironment->DetectedDevice].ChipVariant == CHIP_VARIANT_LPC18XX)
-    {
-        if (!SendAndVerify(IspEnvironment, "S 0\r\n", Answer, sizeof Answer))
-        {
-            DebugPrintf(1, "Wrong answer on SetActiveBootFlashBank-Command\n");
-            return (WRONG_ANSWER_BTBNK + GetAndReportErrorNumber(Answer));
+            if (!SendAndVerify(IspEnvironment, "S 0\r\n", Answer, sizeof Answer))
+            {
+                DebugPrintf(1, "Wrong answer on SetActiveBootFlashBank-Command\n");
+                return (WRONG_ANSWER_BTBNK + GetAndReportErrorNumber(Answer));
+            }
         }
     }
 
