@@ -19,6 +19,7 @@ else
 CFLAGS		+= -static
 endif
 
+
 adprog.o: adprog.c $(GLOBAL_DEP)
 	$(CC) $(CDEBUG) $(CFLAGS) -c -o adprog.o adprog.c
 
