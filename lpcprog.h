@@ -64,6 +64,9 @@ Portions Copyright (c) by Aeolus Development 2004 http://www.aeolusdevelopment.c
 #define LPC_RAMSTART_LPC8XX     0x10000000L
 #define LPC_RAMBASE_LPC8XX      0x10000270L
 
+#define LPC_RAMSTART_LPC15XX    0x02000000L
+#define LPC_RAMBASE_LPC15XX     0x02000300L
+
 /* Return values used by NxpDownload(): reserving all values from 0x1000 to 0x1FFF */
 
 #define NO_ANSWER_WDT       0x1000
@@ -119,6 +122,7 @@ typedef enum
   CHIP_VARIANT_LPC17XX,
   CHIP_VARIANT_LPC13XX,
   CHIP_VARIANT_LPC11XX,
+  CHIP_VARIANT_LPC15XX,
   CHIP_VARIANT_LPC8XX
   } CHIP_VARIANT;
 
